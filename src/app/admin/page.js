@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { formatShort, formatDayMonth } from '@/lib/dates';
 
 export default function Admin() {
@@ -13,6 +13,9 @@ export default function Admin() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [selected, setSelected] = useState([]);
+  const [showBulkModal, setShowBulkModal] = useState(false);
+  const bulkIds = useRef([]);
 
   useEffect(() => {
     if (isAuthenticated) fetchData();
@@ -78,6 +81,13 @@ export default function Admin() {
   async function handleDeletePollito(id) {
     if (!confirm('¿Seguro que deseas eliminar esta cita?')) return;
     await fetch(`/api/pollitos/${id}`, { method: 'DELETE' });
+    fetchData();
+  }
+
+  async function handleBulkDelete() {
+    setShowBulkModal(false);
+    await Promise.all(bulkIds.current.map(id => fetch(`/api/pollitos/${id}`, { method: 'DELETE' })));
+    setSelected([]);
     fetchData();
   }
 
@@ -186,45 +196,83 @@ export default function Admin() {
       </div>
 
       {/* ── Candidates list ── */}
-      <div className="section-heading">
+      <div className="section-heading" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <input
+          type="checkbox"
+          checked={selected.length === pollitos.length && pollitos.length > 0}
+          onChange={selectAll}
+          style={{ marginRight: 8 }}
+          aria-label="Seleccionar todos"
+        />
         Gestionar Candidatos
         {pollitos.length > 0 && <span className="chip-count">{pollitos.length}</span>}
+        <button
+          className="btn-action reject"
+          style={{ marginLeft: 'auto', opacity: selected.length > 0 ? 1 : 0.5 }}
+          disabled={selected.length === 0}
+          onClick={openBulkModal}
+        >
+          Eliminar seleccionados 🗑️
+        </button>
       </div>
+
+      {/* ── Modal de confirmación bulk delete ── */}
+      {showBulkModal && (
+        <div className="modal-overlay">
+          <div className="modal-card">
+            <h3 style={{ marginBottom: 12 }}>¿Eliminar {bulkIds.current.length} citas?</h3>
+            <p style={{ marginBottom: 18 }}>Esta acción no se puede deshacer.</p>
+            <div style={{ display: 'flex', gap: 16, justifyContent: 'center' }}>
+              <button className="btn-action reject" onClick={handleBulkDelete}>Eliminar</button>
+              <button className="btn-action" onClick={closeBulkModal}>Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="card">
         {pollitos.length === 0 && !fetchError ? (
           <p className="empty-text">No hay candidatos aún.</p>
         ) : (
           pollitos.map(p => (
-            <div key={p.id} className="candidate-card" style={{ transform: `rotate(${rot()})` }}>
-              <div className="candidate-header">
-                <strong className="pollito-name">@{p.roblox_user}</strong>
-                <span className="chip">TikTok: @{p.tiktok_user}</span>
-              </div>
-
-              {p.date && (
-                <div className="candidate-date">
-                  📅 {formatDayMonth(p.date)} a las {p.time?.slice(0, 5)}
+            <div key={p.id} className="candidate-card" style={{ transform: `rotate(${rot()})`, display: 'flex', alignItems: 'center' }}>
+              <input
+                type="checkbox"
+                checked={selected.includes(p.id)}
+                onChange={() => toggleSelect(p.id)}
+                style={{ marginRight: 12 }}
+                aria-label={`Seleccionar cita de @${p.roblox_user}`}
+              />
+              <div style={{ flex: 1 }}>
+                <div className="candidate-header">
+                  <strong className="pollito-name">@{p.roblox_user}</strong>
+                  <span className="chip">TikTok: @{p.tiktok_user}</span>
                 </div>
-              )}
 
-              <div className="candidate-actions">
-                {p.status === 'pending' && (
-                  <>
-                    <button onClick={() => handleUpdateStatus(p.id, 'official')} className="btn-action approve">Aprobar 👑</button>
-                    <button onClick={() => handleUpdateStatus(p.id, 'rejected')} className="btn-action reject">Rechazar ❌</button>
-                  </>
+                {p.date && (
+                  <div className="candidate-date">
+                    📅 {formatDayMonth(p.date)} a las {p.time?.slice(0, 5)}
+                  </div>
                 )}
-                {p.status === 'official' && (
-                  <div className="status-badge official">✅ ES OFICIAL</div>
-                )}
-                {p.status === 'rejected' && (
-                  <div className="status-badge rejected">❌ RECHAZADO</div>
-                )}
-                {p.status !== 'pending' && (
-                  <button onClick={() => handleUpdateStatus(p.id, 'pending')} className="btn-action">Deshacer</button>
-                )}
-                <button onClick={() => handleDeletePollito(p.id)} className="btn-action reject">Eliminar 🗑️</button>
+
+                <div className="candidate-actions">
+                  {p.status === 'pending' && (
+                    <>
+                      <button onClick={() => handleUpdateStatus(p.id, 'official')} className="btn-action approve">Aprobar 👑</button>
+                      <button onClick={() => handleUpdateStatus(p.id, 'rejected')} className="btn-action reject">Rechazar ❌</button>
+                    </>
+                  )}
+                  {p.status === 'official' && (
+                    <div className="status-badge official">✅ ES OFICIAL</div>
+                  )}
+                  {p.status === 'rejected' && (
+                    <div className="status-badge rejected">❌ RECHAZADO</div>
+                  )}
+                  {p.status !== 'pending' && (
+                    <button onClick={() => handleUpdateStatus(p.id, 'pending')} className="btn-action">Deshacer</button>
+                  )}
+                  <button onClick={() => handleDeletePollito(p.id)} className="btn-action reject">Eliminar 🗑️</button>
+                </div>
               </div>
             </div>
           ))
@@ -234,4 +282,19 @@ export default function Admin() {
       <a href="/" className="footer-link">← Volver a la landing</a>
     </div>
   );
+}
+
+function toggleSelect(id) {
+  setSelected(sel => sel.includes(id) ? sel.filter(x => x !== id) : [...sel, id]);
+}
+function selectAll() {
+  if (selected.length === pollitos.length) setSelected([]);
+  else setSelected(pollitos.map(p => p.id));
+}
+function openBulkModal() {
+  bulkIds.current = [...selected];
+  setShowBulkModal(true);
+}
+function closeBulkModal() {
+  setShowBulkModal(false);
 }

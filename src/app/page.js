@@ -71,7 +71,6 @@ export default function Landing() {
             <p className="success-sub" style={{ marginBottom: 16 }}>
               Prepárate para tu entrevista 🐣✨
             </p>
-
             <div style={{
               background: 'var(--cream)',
               border: '3px solid var(--ink-black)',
@@ -84,17 +83,28 @@ export default function Landing() {
                 📩 ¡Último paso importante!
               </p>
               <p style={{ fontSize: '0.95rem', lineHeight: 1.5, marginBottom: 14 }}>
-                Escríbele un mensaje por TikTok a <strong>@camvsssx</strong> indicándole que ya separaste tu cita para la entrevista.
+                Escríbele un mensaje por TikTok a <strong>@camvsssx</strong> <b>y</b> <strong>@delfii.x0</strong> indicándoles que ya separaste tu cita para la entrevista.
               </p>
-              <a
-                href="https://www.tiktok.com/@camvsssx"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-primary"
-                style={{ display: 'inline-block', textDecoration: 'none', fontSize: '1rem', padding: '12px 24px' }}
-              >
-                Ir a TikTok de @camvsssx 🎵
-              </a>
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
+                <a
+                  href="https://www.tiktok.com/@camvsssx"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-primary"
+                  style={{ display: 'inline-block', textDecoration: 'none', fontSize: '1rem', padding: '12px 24px' }}
+                >
+                  Ir a TikTok de @camvsssx 🎵
+                </a>
+                <a
+                  href="https://www.tiktok.com/@delfii.x0"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-primary"
+                  style={{ display: 'inline-block', textDecoration: 'none', fontSize: '1rem', padding: '12px 24px', background: 'var(--pink)', borderColor: 'var(--pink)' }}
+                >
+                  Ir a TikTok de @delfii.x0 🎵
+                </a>
+              </div>
             </div>
           </div>
         ) : (
