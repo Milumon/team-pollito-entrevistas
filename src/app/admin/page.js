@@ -87,6 +87,25 @@ export default function Admin() {
     }
   }
 
+  function openDeleteModal(id) {
+    setToDeleteId(id);
+    setShowDeleteModal(true);
+  }
+
+  function closeDeleteModal() {
+    setShowDeleteModal(false);
+    setToDeleteId(null);
+  }
+
+  async function handleDeletePollitoConfirmed() {
+    setShowDeleteModal(false);
+    if (toDeleteId) {
+      await fetch(`/api/pollitos/${toDeleteId}`, { method: 'DELETE' });
+      setToDeleteId(null);
+      fetchData();
+    }
+  }
+
   const rot = () => `${(Math.random() * 1.5 - 0.75).toFixed(1)}deg`;
 
   /* ── Login screen ── */
@@ -245,28 +264,4 @@ export default function Admin() {
       <a href="/" className="footer-link">← Volver a la landing</a>
     </div>
   );
-}
-
-function openBulkModal() {
-  bulkIds.current = [...selected];
-  setShowBulkModal(true);
-}
-function closeBulkModal() {
-  setShowBulkModal(false);
-}
-function openDeleteModal(id) {
-  setToDeleteId(id);
-  setShowDeleteModal(true);
-}
-function closeDeleteModal() {
-  setShowDeleteModal(false);
-  setToDeleteId(null);
-}
-async function handleDeletePollitoConfirmed() {
-  setShowDeleteModal(false);
-  if (toDeleteId) {
-    await fetch(`/api/pollitos/${toDeleteId}`, { method: 'DELETE' });
-    setToDeleteId(null);
-    fetchData();
-  }
 }
