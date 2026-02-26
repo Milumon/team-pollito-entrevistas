@@ -183,24 +183,8 @@ export default function Admin() {
       </div>
 
       {/* ── Candidates list ── */}
-      <div className="section-heading" style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 12 }}>
-        <input
-          type="checkbox"
-          checked={selected.length === pollitos.length && pollitos.length > 0}
-          onChange={selectAll}
-          style={{ width: 22, height: 22, accentColor: 'var(--yellow)', borderRadius: 6, border: '2px solid var(--ink)' }}
-          aria-label="Seleccionar todos"
-        />
-        <span style={{ fontWeight: 600, fontSize: '1.1rem' }}>Seleccionar todos</span>
-        <span style={{ flex: 1 }} />
-        <button
-          className="btn-action reject"
-          style={{ minWidth: 160, fontWeight: 700, fontSize: '1rem', borderRadius: 10, opacity: selected.length > 0 ? 1 : 0.5, transition: 'opacity 0.2s' }}
-          disabled={selected.length === 0}
-          onClick={openBulkModal}
-        >
-          🗑️ Eliminar seleccionados
-        </button>
+      <div className="section-heading">
+        Gestionar Candidatos
         {pollitos.length > 0 && <span className="chip-count">{pollitos.length}</span>}
       </div>
 
@@ -272,10 +256,6 @@ export default function Admin() {
 
 function toggleSelect(id) {
   setSelected(sel => sel.includes(id) ? sel.filter(x => x !== id) : [...sel, id]);
-}
-function selectAll() {
-  if (selected.length === pollitos.length && pollitos.length > 0) setSelected([]);
-  else setSelected(pollitos.map(p => p.id));
 }
 function openBulkModal() {
   bulkIds.current = [...selected];
