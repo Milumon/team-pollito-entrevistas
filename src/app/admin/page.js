@@ -13,8 +13,8 @@ export default function Admin() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [selected, setSelected] = useState([]);
-  const [showBulkModal, setShowBulkModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [toDeleteId, setToDeleteId] = useState(null);
   const bulkIds = useRef([]);
 
   useEffect(() => {
@@ -75,19 +75,6 @@ export default function Admin() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status }),
     });
-    fetchData();
-  }
-
-  async function handleDeletePollito(id) {
-    if (!confirm('¿Seguro que deseas eliminar esta cita?')) return;
-    await fetch(`/api/pollitos/${id}`, { method: 'DELETE' });
-    fetchData();
-  }
-
-  async function handleBulkDelete() {
-    setShowBulkModal(false);
-    await Promise.all(bulkIds.current.map(id => fetch(`/api/pollitos/${id}`, { method: 'DELETE' })));
-    setSelected([]);
     fetchData();
   }
 
@@ -216,20 +203,6 @@ export default function Admin() {
         </button>
         {pollitos.length > 0 && <span className="chip-count">{pollitos.length}</span>}
       </div>
-
-      {/* ── Modal de confirmación bulk delete ── */}
-      {showBulkModal && (
-        <div className="modal-overlay">
-          <div className="modal-card" style={{ minWidth: 320, border: '4px solid var(--red)', borderRadius: 20 }}>
-            <h3 style={{ marginBottom: 16, fontSize: '1.25rem', fontWeight: 700, color: 'var(--ink)' }}>¿Eliminar {bulkIds.current.length} citas?</h3>
-            <p style={{ marginBottom: 22, color: 'var(--ink-soft)' }}>Esta acción no se puede deshacer.</p>
-            <div style={{ display: 'flex', gap: 20, justifyContent: 'center' }}>
-              <button className="btn-action reject" style={{ fontSize: '1.1rem', padding: '12px 32px', borderRadius: 12 }} onClick={handleBulkDelete}>Eliminar</button>
-              <button className="btn-action" style={{ fontSize: '1.1rem', padding: '12px 32px', borderRadius: 12 }} onClick={closeBulkModal}>Cancelar</button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── Modal de confirmación individual ── */}
       {showDeleteModal && (
