@@ -74,7 +74,34 @@ export default function Landing() {
           <div className="success-box">
             <div className="success-icon">🎉</div>
             <p className="success-title">¡Registro enviado!</p>
-            <p className="success-sub">Prepárate para tu entrevista 🐣✨</p>
+            <p className="success-sub" style={{ marginBottom: 16 }}>
+              Prepárate para tu entrevista 🐣✨
+            </p>
+
+            <div style={{
+              background: 'var(--cream)',
+              border: '3px solid var(--ink-black)',
+              borderRadius: 16,
+              padding: '20px 16px',
+              textAlign: 'center',
+              marginTop: 8,
+            }}>
+              <p style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', fontWeight: 700, marginBottom: 8 }}>
+                📩 ¡Último paso importante!
+              </p>
+              <p style={{ fontSize: '0.95rem', lineHeight: 1.5, marginBottom: 14 }}>
+                Escríbele un mensaje por TikTok a <strong>@camvsssx</strong> indicándole que ya separaste tu cita para la entrevista.
+              </p>
+              <a
+                href="https://www.tiktok.com/@camvsssx"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-primary"
+                style={{ display: 'inline-block', textDecoration: 'none', fontSize: '1rem', padding: '12px 24px' }}
+              >
+                Ir a TikTok de @camvsssx 🎵
+              </a>
+            </div>
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
