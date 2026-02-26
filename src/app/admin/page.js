@@ -196,66 +196,65 @@ export default function Admin() {
       </div>
 
       {/* ── Candidates list ── */}
-      <div className="section-heading" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div className="section-heading" style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 12 }}>
         <input
           type="checkbox"
           checked={selected.length === pollitos.length && pollitos.length > 0}
           onChange={selectAll}
-          style={{ marginRight: 8 }}
+          style={{ width: 22, height: 22, accentColor: 'var(--yellow)', borderRadius: 6, border: '2px solid var(--ink)' }}
           aria-label="Seleccionar todos"
         />
-        Gestionar Candidatos
-        {pollitos.length > 0 && <span className="chip-count">{pollitos.length}</span>}
+        <span style={{ fontWeight: 600, fontSize: '1.1rem' }}>Seleccionar todos</span>
+        <span style={{ flex: 1 }} />
         <button
           className="btn-action reject"
-          style={{ marginLeft: 'auto', opacity: selected.length > 0 ? 1 : 0.5 }}
+          style={{ minWidth: 160, fontWeight: 700, fontSize: '1rem', borderRadius: 10, opacity: selected.length > 0 ? 1 : 0.5, transition: 'opacity 0.2s' }}
           disabled={selected.length === 0}
           onClick={openBulkModal}
         >
-          Eliminar seleccionados 🗑️
+          🗑️ Eliminar seleccionados
         </button>
+        {pollitos.length > 0 && <span className="chip-count">{pollitos.length}</span>}
       </div>
 
       {/* ── Modal de confirmación bulk delete ── */}
       {showBulkModal && (
         <div className="modal-overlay">
-          <div className="modal-card">
-            <h3 style={{ marginBottom: 12 }}>¿Eliminar {bulkIds.current.length} citas?</h3>
-            <p style={{ marginBottom: 18 }}>Esta acción no se puede deshacer.</p>
-            <div style={{ display: 'flex', gap: 16, justifyContent: 'center' }}>
-              <button className="btn-action reject" onClick={handleBulkDelete}>Eliminar</button>
-              <button className="btn-action" onClick={closeBulkModal}>Cancelar</button>
+          <div className="modal-card" style={{ minWidth: 320, border: '4px solid var(--red)', borderRadius: 20 }}>
+            <h3 style={{ marginBottom: 16, fontSize: '1.25rem', fontWeight: 700, color: 'var(--ink)' }}>¿Eliminar {bulkIds.current.length} citas?</h3>
+            <p style={{ marginBottom: 22, color: 'var(--ink-soft)' }}>Esta acción no se puede deshacer.</p>
+            <div style={{ display: 'flex', gap: 20, justifyContent: 'center' }}>
+              <button className="btn-action reject" style={{ fontSize: '1.1rem', padding: '12px 32px', borderRadius: 12 }} onClick={handleBulkDelete}>Eliminar</button>
+              <button className="btn-action" style={{ fontSize: '1.1rem', padding: '12px 32px', borderRadius: 12 }} onClick={closeBulkModal}>Cancelar</button>
             </div>
           </div>
         </div>
       )}
 
-      <div className="card">
+      <div className="card" style={{ marginTop: 0 }}>
         {pollitos.length === 0 && !fetchError ? (
           <p className="empty-text">No hay candidatos aún.</p>
         ) : (
           pollitos.map(p => (
-            <div key={p.id} className="candidate-card" style={{ transform: `rotate(${rot()})`, display: 'flex', alignItems: 'center' }}>
+            <div key={p.id} className="candidate-card" style={{ transform: `rotate(${rot()})`, display: 'flex', alignItems: 'center', gap: 12, padding: 18, borderRadius: 16, border: '3px solid var(--ink)', marginBottom: 18, background: 'var(--cream)', boxShadow: 'var(--shadow-sm)' }}>
               <input
                 type="checkbox"
                 checked={selected.includes(p.id)}
                 onChange={() => toggleSelect(p.id)}
-                style={{ marginRight: 12 }}
+                style={{ width: 22, height: 22, accentColor: 'var(--yellow)', borderRadius: 8, border: '2px solid var(--ink)', marginRight: 10 }}
                 aria-label={`Seleccionar cita de @${p.roblox_user}`}
               />
-              <div style={{ flex: 1 }}>
-                <div className="candidate-header">
-                  <strong className="pollito-name">@{p.roblox_user}</strong>
-                  <span className="chip">TikTok: @{p.tiktok_user}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="candidate-header" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  <strong className="pollito-name" style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--ink)' }}>@{p.roblox_user}</strong>
+                  <span className="chip" style={{ fontSize: '0.95rem', background: 'var(--mint-light)', color: 'var(--ink)' }}>TikTok: @{p.tiktok_user}</span>
                 </div>
-
                 {p.date && (
-                  <div className="candidate-date">
+                  <div className="candidate-date" style={{ fontSize: '0.98rem', color: 'var(--ink-soft)', marginBottom: 6 }}>
                     📅 {formatDayMonth(p.date)} a las {p.time?.slice(0, 5)}
                   </div>
                 )}
-
-                <div className="candidate-actions">
+                <div className="candidate-actions" style={{ display: 'flex', gap: 10, marginTop: 6 }}>
                   {p.status === 'pending' && (
                     <>
                       <button onClick={() => handleUpdateStatus(p.id, 'official')} className="btn-action approve">Aprobar 👑</button>
@@ -288,7 +287,7 @@ function toggleSelect(id) {
   setSelected(sel => sel.includes(id) ? sel.filter(x => x !== id) : [...sel, id]);
 }
 function selectAll() {
-  if (selected.length === pollitos.length) setSelected([]);
+  if (selected.length === pollitos.length && pollitos.length > 0) setSelected([]);
   else setSelected(pollitos.map(p => p.id));
 }
 function openBulkModal() {
