@@ -75,6 +75,12 @@ export default function Admin() {
     fetchData();
   }
 
+  async function handleDeletePollito(id) {
+    if (!confirm('¿Seguro que deseas eliminar esta cita?')) return;
+    await fetch(`/api/pollitos/${id}`, { method: 'DELETE' });
+    fetchData();
+  }
+
   function handleLogin(e) {
     e.preventDefault();
     if (username === 'admin' && password === 'milustroki') {
@@ -218,6 +224,7 @@ export default function Admin() {
                 {p.status !== 'pending' && (
                   <button onClick={() => handleUpdateStatus(p.id, 'pending')} className="btn-action">Deshacer</button>
                 )}
+                <button onClick={() => handleDeletePollito(p.id)} className="btn-action reject">Eliminar 🗑️</button>
               </div>
             </div>
           ))
