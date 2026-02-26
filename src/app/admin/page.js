@@ -208,13 +208,6 @@ export default function Admin() {
         ) : (
           pollitos.map(p => (
             <div key={p.id} className="candidate-card" style={{ transform: `rotate(${rot()})`, display: 'flex', alignItems: 'center', gap: 12, padding: 18, borderRadius: 16, border: '3px solid var(--ink)', marginBottom: 18, background: 'var(--cream)', boxShadow: 'var(--shadow-sm)' }}>
-              <input
-                type="checkbox"
-                checked={selected.includes(p.id)}
-                onChange={() => toggleSelect(p.id)}
-                style={{ width: 22, height: 22, accentColor: 'var(--yellow)', borderRadius: 8, border: '2px solid var(--ink)', marginRight: 10 }}
-                aria-label={`Seleccionar cita de @${p.roblox_user}`}
-              />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="candidate-header" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                   <strong className="pollito-name" style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--ink)' }}>@{p.roblox_user}</strong>
@@ -254,9 +247,6 @@ export default function Admin() {
   );
 }
 
-function toggleSelect(id) {
-  setSelected(sel => sel.includes(id) ? sel.filter(x => x !== id) : [...sel, id]);
-}
 function openBulkModal() {
   bulkIds.current = [...selected];
   setShowBulkModal(true);
