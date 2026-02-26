@@ -182,7 +182,7 @@ export default function Landing() {
               </label>
             </div>
 
-            <button type="submit" className="btn-primary" disabled={loading || slots.length === 0}>
+            <button type="submit" className="btn-primary" disabled={loading || slots.length === 0 || !watchedLive || !hasEmoji || !formData.roblox_user.trim() || !formData.tiktok_user.trim()}>
               {loading ? 'ENVIANDO...' : '¡QUIERO SER POLLITO! 🐣'}
             </button>
           </form>
