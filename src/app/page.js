@@ -39,7 +39,6 @@ export default function Landing() {
       setSuccess(true);
       setFormData({ roblox_user: '', tiktok_user: '', slot_id: '' });
       fetchData();
-      setTimeout(() => setSuccess(false), 5000);
     } catch {
       alert('Hubo un error al agendar la entrevista. Por favor intenta de nuevo.');
     } finally {
