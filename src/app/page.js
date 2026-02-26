@@ -32,7 +32,15 @@ export default function Landing() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...formData, slot_id: Number(formData.slot_id) }),
       });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        if (res.status === 409) {
+          alert(err.error || 'Este horario ya fue reservado. Elige otro.');
+          fetchData();
+          return;
+        }
+        throw new Error(err.error || 'Error desconocido');
+      }
       setSuccess(true);
       setFormData({ roblox_user: '', tiktok_user: '', slot_id: '' });
       fetchData();
