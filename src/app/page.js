@@ -34,11 +34,6 @@ export default function Landing() {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        if (res.status === 409) {
-          alert(err.error || 'Este horario ya fue reservado. Elige otro.');
-          fetchData();
-          return;
-        }
         throw new Error(err.error || 'Error desconocido');
       }
       setSuccess(true);

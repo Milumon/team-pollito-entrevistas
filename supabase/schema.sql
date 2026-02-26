@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS pollitos (
   id           BIGSERIAL PRIMARY KEY,
   roblox_user  TEXT        NOT NULL,
   tiktok_user  TEXT        NOT NULL,
-  slot_id      BIGINT      UNIQUE REFERENCES slots(id) ON DELETE SET NULL,
+  slot_id      BIGINT      REFERENCES slots(id) ON DELETE SET NULL,
   status       TEXT        NOT NULL DEFAULT 'pending'
                            CHECK (status IN ('pending', 'official', 'rejected')),
   created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
