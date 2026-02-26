@@ -9,6 +9,8 @@ export default function Landing() {
   const [formData, setFormData] = useState({ roblox_user: '', tiktok_user: '', slot_id: '' });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [watchedLive, setWatchedLive] = useState(false);
+  const [hasEmoji, setHasEmoji] = useState(false);
 
   useEffect(() => { fetchData(); }, []);
 
@@ -17,7 +19,7 @@ export default function Landing() {
       fetch('/api/slots'),
       fetch('/api/pollitos'),
     ]);
-    const slotsData    = await slotsRes.json();
+    const slotsData = await slotsRes.json();
     const pollitosData = await pollitosRes.json();
     setSlots(Array.isArray(slotsData) ? slotsData : []);
     setPollitos(Array.isArray(pollitosData) ? pollitosData : []);
@@ -38,6 +40,8 @@ export default function Landing() {
       }
       setSuccess(true);
       setFormData({ roblox_user: '', tiktok_user: '', slot_id: '' });
+      setWatchedLive(false);
+      setHasEmoji(false);
       fetchData();
     } catch {
       alert('Hubo un error al agendar la entrevista. Por favor intenta de nuevo.');
@@ -46,7 +50,7 @@ export default function Landing() {
     }
   }
 
-  const pendingPollitos  = pollitos.filter(p => p.status === 'pending');
+  const pendingPollitos = pollitos.filter(p => p.status === 'pending');
   const officialPollitos = pollitos.filter(p => p.status === 'official');
 
   const rot = () => `${(Math.random() * 2.5 - 1.25).toFixed(1)}deg`;
@@ -148,6 +152,34 @@ export default function Landing() {
               {slots.length === 0 && (
                 <p className="no-slots-warning">No hay horarios disponibles por ahora.</p>
               )}
+            </div>
+
+            <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 16 }}>
+              <input
+                type="checkbox"
+                id="watchedLive"
+                required
+                checked={watchedLive}
+                onChange={e => setWatchedLive(e.target.checked)}
+                style={{ width: '20px', height: '20px', cursor: 'pointer', flexShrink: 0 }}
+              />
+              <label htmlFor="watchedLive" style={{ fontSize: '0.95rem', color: 'var(--ink)' }}>
+                Confirmo que he visto el live por más de 3 días 📺
+              </label>
+            </div>
+
+            <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12, marginBottom: 20 }}>
+              <input
+                type="checkbox"
+                id="hasEmoji"
+                required
+                checked={hasEmoji}
+                onChange={e => setHasEmoji(e.target.checked)}
+                style={{ width: '20px', height: '20px', cursor: 'pointer', flexShrink: 0 }}
+              />
+              <label htmlFor="hasEmoji" style={{ fontSize: '0.95rem', color: 'var(--ink)' }}>
+                Confirmo que tengo el emoji 🐣 en mi nombre de TikTok
+              </label>
             </div>
 
             <button type="submit" className="btn-primary" disabled={loading || slots.length === 0}>
