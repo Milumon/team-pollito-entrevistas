@@ -231,6 +231,20 @@ export default function Admin() {
         </div>
       )}
 
+      {/* ── Modal de confirmación individual ── */}
+      {showDeleteModal && (
+        <div className="modal-overlay">
+          <div className="modal-card" style={{ minWidth: 320, border: '4px solid var(--red)', borderRadius: 20 }}>
+            <h3 style={{ marginBottom: 16, fontSize: '1.15rem', fontWeight: 700, color: 'var(--ink)' }}>¿Eliminar esta cita?</h3>
+            <p style={{ marginBottom: 22, color: 'var(--ink-soft)' }}>Esta acción no se puede deshacer.</p>
+            <div style={{ display: 'flex', gap: 20, justifyContent: 'center' }}>
+              <button className="btn-action reject" style={{ fontSize: '1.1rem', padding: '12px 32px', borderRadius: 12 }} onClick={handleDeletePollitoConfirmed}>Eliminar</button>
+              <button className="btn-action" style={{ fontSize: '1.1rem', padding: '12px 32px', borderRadius: 12 }} onClick={closeDeleteModal}>Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="card" style={{ marginTop: 0 }}>
         {pollitos.length === 0 && !fetchError ? (
           <p className="empty-text">No hay candidatos aún.</p>
@@ -270,7 +284,7 @@ export default function Admin() {
                   {p.status !== 'pending' && (
                     <button onClick={() => handleUpdateStatus(p.id, 'pending')} className="btn-action">Deshacer</button>
                   )}
-                  <button onClick={() => handleDeletePollito(p.id)} className="btn-action reject">Eliminar 🗑️</button>
+                  <button onClick={() => openDeleteModal(p.id)} className="btn-action reject">Eliminar 🗑️</button>
                 </div>
               </div>
             </div>
@@ -296,4 +310,20 @@ function openBulkModal() {
 }
 function closeBulkModal() {
   setShowBulkModal(false);
+}
+function openDeleteModal(id) {
+  setToDeleteId(id);
+  setShowDeleteModal(true);
+}
+function closeDeleteModal() {
+  setShowDeleteModal(false);
+  setToDeleteId(null);
+}
+async function handleDeletePollitoConfirmed() {
+  setShowDeleteModal(false);
+  if (toDeleteId) {
+    await fetch(`/api/pollitos/${toDeleteId}`, { method: 'DELETE' });
+    setToDeleteId(null);
+    fetchData();
+  }
 }
