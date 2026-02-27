@@ -15,7 +15,6 @@ export async function GET() {
 // POST /api/members — añadir miembro manualmente o por promoción
 export async function POST(request) {
     const body = await request.json();
-    console.log('API Members POST Body:', body);
     const { roblox_user, tiktok_user } = body;
 
     if (!roblox_user || !tiktok_user) {

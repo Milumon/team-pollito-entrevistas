@@ -5,8 +5,8 @@ export async function POST(request) {
         const body = await request.json();
         const { username, password } = body;
 
-        const correctUser = process.env.ADMIN_USER;
-        const correctPass = process.env.ADMIN_PASS;
+        const correctUser = process.env.ADMIN_USERNAME || process.env.ADMIN_USER;
+        const correctPass = process.env.ADMIN_PASSWORD || process.env.ADMIN_PASS;
 
         if (!correctUser || !correctPass) {
             console.error('SERVER ERROR: Admin credentials not set in environment variables.');
