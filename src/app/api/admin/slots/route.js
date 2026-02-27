@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server';
 export async function GET() {
   const { data, error } = await supabaseAdmin
     .from('slots')
-    .select('id, date, time, is_booked')
+    .select('id, date, time, is_booked, moderator')
     .order('date', { ascending: true })
     .order('time', { ascending: true });
 

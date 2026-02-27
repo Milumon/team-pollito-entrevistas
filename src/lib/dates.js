@@ -31,3 +31,14 @@ export function formatDayMonth(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
   return d.toLocaleDateString('es-ES', { day: '2-digit', month: 'long' });
 }
+
+/**
+ * "08:00 PM"
+ */
+export function formatTime12h(timeStr) {
+  if (!timeStr) return '';
+  const [hours, minutes] = timeStr.split(':');
+  const d = new Date();
+  d.setHours(parseInt(hours, 10), parseInt(minutes, 10));
+  return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+}

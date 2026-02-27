@@ -12,7 +12,16 @@ export default function Landing() {
   const [watchedLive, setWatchedLive] = useState(false);
   const [hasEmoji, setHasEmoji] = useState(false);
 
-  useEffect(() => { fetchData(); }, []);
+  const [members, setMembers] = useState([]);
+  const [showMembers, setShowMembers] = useState(false);
+
+  useEffect(() => { fetchData(); fetchMembers(); }, []);
+
+  async function fetchMembers() {
+    const res = await fetch('/api/members');
+    const data = await res.json();
+    setMembers(Array.isArray(data) ? data : []);
+  }
 
   async function fetchData() {
     const [slotsRes, pollitosRes] = await Promise.all([
@@ -115,24 +124,32 @@ export default function Landing() {
           <form onSubmit={handleSubmit}>
             <div className="form-group">
               <label className="form-label">Tu Usuario de Roblox</label>
-              <input
-                type="text"
-                placeholder="@RobloxUser"
-                required
-                value={formData.roblox_user}
-                onChange={e => setFormData({ ...formData, roblox_user: e.target.value })}
-              />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--ink)' }}>@</span>
+                <input
+                  type="text"
+                  placeholder="RobloxUser"
+                  required
+                  value={formData.roblox_user}
+                  onChange={e => setFormData({ ...formData, roblox_user: e.target.value })}
+                  style={{ flex: 1 }}
+                />
+              </div>
             </div>
 
             <div className="form-group">
               <label className="form-label">Tu Usuario de TikTok</label>
-              <input
-                type="text"
-                placeholder="@TikTokFan"
-                required
-                value={formData.tiktok_user}
-                onChange={e => setFormData({ ...formData, tiktok_user: e.target.value })}
-              />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--ink)' }}>@</span>
+                <input
+                  type="text"
+                  placeholder="TikTokFan"
+                  required
+                  value={formData.tiktok_user}
+                  onChange={e => setFormData({ ...formData, tiktok_user: e.target.value })}
+                  style={{ flex: 1 }}
+                />
+              </div>
             </div>
 
             <div className="form-group">
@@ -143,15 +160,30 @@ export default function Landing() {
                 onChange={e => setFormData({ ...formData, slot_id: e.target.value })}
               >
                 <option value="">Selecciona una fecha...</option>
-                {slots.map(slot => (
-                  <option key={slot.id} value={slot.id}>
-                    {formatFull(slot.date)} — {slot.time.slice(0, 5)}
-                  </option>
-                ))}
+                {slots.map(slot => {
+                  // Convertir hora del slot a local en formato AM/PM
+                  const slotDate = new Date(`${slot.date}T${slot.time}`);
+                  const localTime = slotDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+                  return (
+                    <option key={slot.id} value={slot.id}>
+                      {formatFull(slot.date)} — {localTime} (hora local)
+                    </option>
+                  );
+                })}
               </select>
               {slots.length === 0 && (
                 <p className="no-slots-warning">No hay horarios disponibles por ahora.</p>
               )}
+              {/* Mostrar moderadora del horario seleccionado */}
+              {formData.slot_id && slots.length > 0 && (() => {
+                const slot = slots.find(s => String(s.id) === String(formData.slot_id));
+                if (!slot || !slot.moderator) return null;
+                return (
+                  <div style={{ marginTop: 8, fontSize: '0.98rem', color: 'var(--ink-soft)' }}>
+                    <span>Este horario es con la moderadora <strong>@{slot.moderator}</strong>. Recuerda escribirle por TikTok para confirmar tu entrevista.</span>
+                  </div>
+                );
+              })()}
             </div>
 
             <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 16 }}>
@@ -187,51 +219,228 @@ export default function Landing() {
             </button>
           </form>
         )}
+
+        <div style={{ marginTop: 20 }}>
+          <button
+            onClick={() => setShowMembers(true)}
+            className="btn-primary"
+            style={{
+              background: 'var(--yellow)',
+              color: 'var(--ink)',
+              border: '4px solid var(--ink)',
+              fontSize: '1.1rem',
+              padding: '14px',
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 10
+            }}
+          >
+            👑 Ver Pollitos Oficiales ({members.length})
+          </button>
+        </div>
       </section>
 
-      {/* ── Pending ── */}
+      {/* ── Modal Pollitos Oficiales ── */}
+      {showMembers && (
+        <div className="modal-overlay" onClick={() => setShowMembers(false)}>
+          <div className="modal-card-v3" onClick={e => e.stopPropagation()} style={{ maxWidth: 600 }}>
+            <div className="modal-header-v3">
+              <h3>👑 Team Pollito Oficial</h3>
+              <button onClick={() => setShowMembers(false)} className="close-btn">×</button>
+            </div>
+            <div className="modal-body-v3" style={{ maxHeight: '70vh', overflowY: 'auto', padding: '20px' }}>
+              <p style={{ textAlign: 'center', marginBottom: 20, color: 'var(--ink-soft)' }}>
+                ¡Estos son los pollitos que ya forman parte oficial del Team! 🐣✨
+              </p>
+              {members.length === 0 ? (
+                <p className="empty-text">Aún no hay pollitos oficiales agregados.</p>
+              ) : (
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+                  gap: 16,
+                  justifyContent: 'center'
+                }}>
+                  {members.map(m => (
+                    <div key={m.id} className="pollito-card" style={{ transform: `rotate(${rot()})`, border: '3px solid var(--yellow)', margin: 0, minWidth: 180, flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
+                      <span className="pollito-name">Roblox: @{(m.roblox_user || '').replace(/^@+/, '')}</span>
+                      <div className="pollito-name" style={{ marginTop: -4 }}>
+                        TikTok: <a
+                          href={`https://www.tiktok.com/search/user?q=${(m.tiktok_user || '').replace(/^@+/, '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ color: 'var(--ink)', textDecoration: 'underline' }}
+                        >
+                          @{(m.tiktok_user || '').replace(/^@+/, '')}
+                        </a>
+                      </div>
+                      <span className="badge-official" style={{ fontSize: '0.75rem' }}>POLLITO OFICIAL</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="modal-footer-v3">
+              <button onClick={() => setShowMembers(false)} className="btn-primary-v3">CERRAR</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Entrevistas por confirmar ── */}
       <div style={{ marginTop: 32 }}>
         <div className="section-heading">
-          🕒 Entrevistas Pendientes
+          🕒 Entrevistas por confirmar
           {pendingPollitos.length > 0 && (
-            <span className="chip-count">{pendingPollitos.length}</span>
+            <span className="chip-count" style={{ background: 'var(--ink)', color: 'white' }}>{pendingPollitos.length}</span>
           )}
         </div>
-
+        <p style={{ fontSize: '0.95rem', color: 'var(--ink)', marginBottom: 12, opacity: 0.8 }}>
+          Aquí aparecen quienes han llenado el formulario y están pendientes de confirmar su entrevista.
+        </p>
         {pendingPollitos.length === 0 ? (
-          <p className="empty-text">No hay entrevistas pendientes.</p>
+          <p className="empty-text">No hay entrevistas por confirmar.</p>
         ) : (
-          pendingPollitos.slice(0, 5).map(p => (
-            <div key={p.id} className="pollito-card" style={{ transform: `rotate(${rot()})` }}>
-              <span className="pollito-name">@{p.roblox_user}</span>
-              <span className="chip">
-                {p.date
-                  ? `${formatMedium(p.date)} · ${p.time?.slice(0, 5)}`
-                  : 'Pendiente'}
-              </span>
-            </div>
-          ))
+          pendingPollitos.slice(0, 5).map(p => {
+            const slotDate = p.date && p.time ? new Date(`${p.date}T${p.time}`) : null;
+            const localTime = slotDate ? slotDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : null;
+            return (
+              <div key={p.id} className="pollito-card" style={{ transform: `rotate(${rot()})`, flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
+                <span className="pollito-name">Roblox: @{(p.roblox_user || '').replace(/^@+/, '')}</span>
+                <div className="pollito-name" style={{ marginTop: -4 }}>
+                  TikTok: <a
+                    href={`https://www.tiktok.com/search/user?q=${(p.tiktok_user || '').replace(/^@+/, '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: 'var(--ink)', textDecoration: 'underline' }}
+                  >
+                    @{(p.tiktok_user || '').replace(/^@+/, '')}
+                  </a>
+                </div>
+                <div className="interview-info-v4" style={{
+                  marginTop: '12px',
+                  padding: '12px 16px',
+                  background: 'rgba(0,0,0,0.04)',
+                  borderRadius: '16px',
+                  border: '1px dashed rgba(0,0,0,0.1)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px',
+                  width: '100%'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--ink)' }}>
+                    <span style={{ fontSize: '1.2rem' }}>📅</span>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span style={{ fontSize: '0.85rem', fontWeight: 700 }}>
+                        {p.date ? formatMedium(p.date) : 'Fecha Pendiente'}
+                      </span>
+                      {p.time && (
+                        <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>
+                          {localTime || p.time?.slice(0, 5)} <small>(hora local)</small>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {p.moderator && (
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      paddingTop: '8px',
+                      borderTop: '1px solid rgba(0,0,0,0.08)',
+                      color: 'var(--ink)'
+                    }}>
+                      <span style={{ fontSize: '1rem' }}>👑</span>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                        Moderadora: <strong style={{ color: 'var(--orange)', fontWeight: 800 }}>@{p.moderator}</strong>
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })
         )}
       </div>
 
-      {/* ── Oficiales ── */}
+      {/* ── Entrevistas confirmadas ── */}
       <div style={{ marginTop: 28 }}>
         <div className="section-heading">
-          👑 Pollitos Oficiales
+          👑 Entrevistas confirmadas
           {officialPollitos.length > 0 && (
             <span className="chip-count">{officialPollitos.length}</span>
           )}
         </div>
-
+        <p style={{ fontSize: '0.95rem', color: 'var(--ink)', marginBottom: 8 }}>
+          Aquí aparecen solo quienes ya han realizado el paso de escribir a las moderadoras <strong>@delfii.x0</strong> o <strong>@camvsssx</strong> y han confirmado su entrevista.
+        </p>
         {officialPollitos.length === 0 ? (
-          <p className="empty-text">Aún no hay pollitos oficiales.</p>
+          <p className="empty-text">Aún no hay entrevistas confirmadas.</p>
         ) : (
-          officialPollitos.map(p => (
-            <div key={p.id} className="pollito-card" style={{ transform: `rotate(${rot()})` }}>
-              <span className="pollito-name">@{p.roblox_user}</span>
-              <span className="badge-official">OFICIAL</span>
-            </div>
-          ))
+          officialPollitos.map(p => {
+            const slotDate = p.date && p.time ? new Date(`${p.date}T${p.time}`) : null;
+            const localTime = slotDate ? slotDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : null;
+            return (
+              <div key={p.id} className="pollito-card" style={{ transform: `rotate(${rot()})`, flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  <span className="pollito-name">Roblox: @{(p.roblox_user || '').replace(/^@+/, '')}</span>
+                  <span className="badge-official">CONFIRMADA</span>
+                </div>
+                <div className="pollito-name" style={{ marginTop: -4 }}>
+                  TikTok: <a
+                    href={`https://www.tiktok.com/search/user?q=${(p.tiktok_user || '').replace(/^@+/, '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: 'var(--ink)', textDecoration: 'underline' }}
+                  >
+                    @{(p.tiktok_user || '').replace(/^@+/, '')}
+                  </a>
+                </div>
+                {p.date && p.time && (
+                  <div className="interview-info-v4" style={{
+                    marginTop: '12px',
+                    padding: '12px 16px',
+                    background: 'rgba(0,0,0,0.04)',
+                    borderRadius: '16px',
+                    border: '1px dashed rgba(0,0,0,0.1)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                    width: '100%'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--ink)' }}>
+                      <span style={{ fontSize: '1.2rem' }}>📅</span>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 700 }}>
+                          {formatMedium(p.date)}
+                        </span>
+                        <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>
+                          {localTime || p.time?.slice(0, 5)} <small>(hora local)</small>
+                        </span>
+                      </div>
+                    </div>
+                    {p.moderator && (
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        paddingTop: '8px',
+                        borderTop: '1px solid rgba(0,0,0,0.08)',
+                        color: 'var(--ink)'
+                      }}>
+                        <span style={{ fontSize: '1rem' }}>👑</span>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                          Moderadora: <strong style={{ color: 'var(--orange)', fontWeight: 800 }}>@{p.moderator}</strong>
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })
         )}
       </div>
 

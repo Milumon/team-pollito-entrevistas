@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server';
 export async function GET() {
   const { data, error } = await supabaseAdmin
     .from('slots')
-    .select('id, date, time')
+    .select('id, date, time, moderator')
     .order('date', { ascending: true })
     .order('time', { ascending: true });
 
@@ -16,7 +16,7 @@ export async function GET() {
 // POST /api/slots — agregar nuevo horario (solo admin)
 export async function POST(request) {
   const body = await request.json();
-  const { date, time } = body;
+  const { date, time, moderator } = body;
 
   if (!date || !time) {
     return NextResponse.json({ error: 'Faltan campos' }, { status: 400 });
@@ -24,7 +24,7 @@ export async function POST(request) {
 
   const { data, error } = await supabaseAdmin
     .from('slots')
-    .insert({ date, time })
+    .insert({ date, time, moderator })
     .select()
     .single();
 
