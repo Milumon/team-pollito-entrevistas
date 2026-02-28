@@ -3,9 +3,12 @@ import { NextResponse } from 'next/server';
 
 // GET /api/slots — todos los slots disponibles para el formulario público
 export async function GET() {
+  const now = new Date().toISOString();
+  // Filtramos para que solo devuelva horarios futuros (o actuales)
   const { data, error } = await supabaseAdmin
     .from('slots')
     .select('id, date, time, moderator')
+    .or(`date.gt.${now.split('T')[0]},and(date.eq.${now.split('T')[0]},time.gte.${now.split('T')[1].slice(0, 8)})`)
     .order('date', { ascending: true })
     .order('time', { ascending: true });
 

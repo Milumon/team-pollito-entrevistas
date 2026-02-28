@@ -59,8 +59,14 @@ export default function Landing() {
     }
   }
 
-  const pendingPollitos = pollitos.filter(p => p.status === 'pending');
-  const officialPollitos = pollitos.filter(p => p.status === 'official');
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  const pendingPollitos = pollitos.filter(p =>
+    p.status === 'pending' && (p.date ? p.date >= todayStr : true)
+  );
+  const officialPollitos = pollitos.filter(p =>
+    p.status === 'official' && (p.date ? p.date >= todayStr : true)
+  );
 
   const rot = () => `${(Math.random() * 2.5 - 1.25).toFixed(1)}deg`;
 
@@ -303,7 +309,7 @@ export default function Landing() {
         {pendingPollitos.length === 0 ? (
           <p className="empty-text">No hay entrevistas por confirmar.</p>
         ) : (
-          pendingPollitos.slice(0, 5).map(p => {
+          pendingPollitos.map(p => {
             const slotDate = p.date && p.time ? new Date(`${p.date}T${p.time}`) : null;
             const localTime = slotDate ? slotDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : null;
             return (
