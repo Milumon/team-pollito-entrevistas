@@ -10,6 +10,7 @@ export default function CandidatesPage() {
     const [showHistory, setShowHistory] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [toDeleteId, setToDeleteId] = useState(null);
+    const [activeTab, setActiveTab] = useState('pending'); // 'pending', 'official', 'rejected'
 
     useEffect(() => {
         fetchData();
@@ -60,11 +61,33 @@ export default function CandidatesPage() {
     }
 
     const today = new Date().toLocaleDateString('en-CA');
-    const rotHelper = () => `${(Math.random() * 1.5 - 0.75).toFixed(1)}deg`;
 
-    const activeCandidates = pollitos.filter(p => !p.date || p.date >= today);
-    const historyCandidates = pollitos.filter(p => p.date && p.date < today);
-    const currentCandidates = showHistory ? historyCandidates : activeCandidates;
+    // Función para ordenar cronológicamente
+    const sortChronologically = (a, b) => {
+        const dateA = a.date || '9999-12-31';
+        const dateB = b.date || '9999-12-31';
+        if (dateA !== dateB) return dateA.localeCompare(dateB);
+        const timeA = a.time || '23:59:59';
+        const timeB = b.time || '23:59:59';
+        return timeA.localeCompare(timeB);
+    };
+
+    const activeCandidates = pollitos
+        .filter(p => !p.date || p.date >= today)
+        .sort(sortChronologically);
+
+    const historyCandidates = pollitos
+        .filter(p => p.date && p.date < today)
+        .sort(sortChronologically);
+
+    const filteredByTab = (showHistory ? historyCandidates : activeCandidates).filter(p => p.status === activeTab);
+
+    // Contadores para las pestañas (basados en la vista actual: Activos o Historial)
+    const counts = {
+        pending: (showHistory ? historyCandidates : activeCandidates).filter(p => p.status === 'pending').length,
+        official: (showHistory ? historyCandidates : activeCandidates).filter(p => p.status === 'official').length,
+        rejected: (showHistory ? historyCandidates : activeCandidates).filter(p => p.status === 'rejected').length,
+    };
 
     const [promotingIds, setPromotingIds] = useState(new Set());
 
@@ -99,14 +122,34 @@ export default function CandidatesPage() {
         <div className="section-container">
             <div className="section-header-v3">
                 <h2 className="section-title-v3">
-                    {showHistory ? 'Historial de Entrevistas' : 'Postulantes Pendientes'}
-                    {currentCandidates.length > 0 && <span className="chip-count-v4">{currentCandidates.length}</span>}
+                    {showHistory ? 'Historial de Entrevistas' : 'Postulantes Administrativos'}
                 </h2>
                 <button
                     onClick={() => setShowHistory(!showHistory)}
                     className={`btn-history-toggle ${showHistory ? 'active' : ''}`}
                 >
-                    {showHistory ? '👁️ Ver Pendientes' : '📜 Ver Historial'}
+                    {showHistory ? '👁️ Ver Actuales' : '📜 Ver Historial'}
+                </button>
+            </div>
+
+            <div className="admin-tabs-v6">
+                <button
+                    className={`tab-btn-v6 ${activeTab === 'pending' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('pending')}
+                >
+                    Pendientes {counts.pending > 0 && <span className="tab-badge-v6">{counts.pending}</span>}
+                </button>
+                <button
+                    className={`tab-btn-v6 ${activeTab === 'official' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('official')}
+                >
+                    Confirmados {counts.official > 0 && <span className="tab-badge-v6 blue">{counts.official}</span>}
+                </button>
+                <button
+                    className={`tab-btn-v6 ${activeTab === 'rejected' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('rejected')}
+                >
+                    Rechazados {counts.rejected > 0 && <span className="tab-badge-v6 red">{counts.rejected}</span>}
                 </button>
             </div>
 
@@ -132,23 +175,25 @@ export default function CandidatesPage() {
                         <div className="skeleton-card skeleton" />
                         <div className="skeleton-card skeleton" />
                     </>
-                ) : currentCandidates.length === 0 && !fetchError ? (
-                    <div className="empty-state-v3" style={{ padding: '40px 20px' }}>
-                        <span className="empty-icon-v3">{showHistory ? '🏜️' : '🐣'}</span>
-                        <p>{showHistory ? 'No hay historial de entrevistas pasadas.' : 'No hay candidatos pendientes por ahora.'}</p>
+                ) : filteredByTab.length === 0 && !fetchError ? (
+                    <div className="empty-state-v3" style={{ padding: '60px 20px' }}>
+                        <span className="empty-icon-v3">
+                            {activeTab === 'pending' ? '🐣' : activeTab === 'official' ? '✅' : '🚫'}
+                        </span>
+                        <p>No hay candidatos en esta sección.</p>
                     </div>
                 ) : (
-                    currentCandidates.map(p => {
+                    filteredByTab.map(p => {
                         const d = p.date && p.time ? new Date(`${p.date}T${p.time}Z`) : null;
                         const displayDate = d ? d.toLocaleDateString('en-CA') : p.date;
-                        const displayTime = d ? d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : p.time;
+                        const displayTime = d ? d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : p.time;
 
                         return (
-                            <div key={p.id} className="candidate-card-v2" style={{ transform: `rotate(${rotHelper()})` }}>
-                                <div className="candidate-info-v2">
-                                    <div className="candidate-primary-v2" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
-                                        <span className="candidate-roblox">Roblox: @{(p.roblox_user || '').replace(/^@+/, '')}</span>
-                                        <span className="candidate-tiktok">
+                            <div key={p.id} className="candidate-card-v3">
+                                <div className="candidate-info-row-v3">
+                                    <div className="candidate-main-v3">
+                                        <span className="candidate-roblox-v3">@{(p.roblox_user || '').replace(/^@+/, '')}</span>
+                                        <span className="candidate-tiktok-v3">
                                             TikTok: <a
                                                 href={`https://www.tiktok.com/search/user?q=${(p.tiktok_user || '').replace(/^@+/, '')}`}
                                                 target="_blank"
@@ -159,78 +204,61 @@ export default function CandidatesPage() {
                                             </a>
                                         </span>
                                     </div>
-                                    <div className="candidate-schedule-v3" style={{
-                                        marginTop: '12px',
-                                        padding: '12px',
-                                        background: 'rgba(0,0,0,0.03)',
-                                        borderRadius: '12px',
-                                        border: '1px dashed var(--ink-soft)',
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        gap: '8px'
-                                    }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <span style={{ fontSize: '1.2rem' }}>📅</span>
-                                            <div>
-                                                <div style={{ fontWeight: 700, fontSize: '0.9rem', lineHeight: 1.1, color: 'var(--ink)' }}>{formatDayMonth(displayDate)}</div>
-                                                <div style={{ fontSize: '0.82rem', color: 'var(--ink-soft)' }}>{formatTime12h(displayTime)} <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>(Hora Local)</span></div>
+
+                                    <div className="candidate-schedule-v3">
+                                        <div className="schedule-item-v3">
+                                            <span className="schedule-icon-v3">📅</span>
+                                            <div className="schedule-text-v3">
+                                                <strong>{formatDayMonth(displayDate)}</strong>
+                                                <span>Fecha de Entrevista</span>
                                             </div>
                                         </div>
-
+                                        <div className="schedule-item-v3">
+                                            <span className="schedule-icon-v3">⌚</span>
+                                            <div className="schedule-text-v3">
+                                                <strong>{formatTime12h(displayTime)}</strong>
+                                                <span>Hora Local</span>
+                                            </div>
+                                        </div>
                                         {p.moderator && (
-                                            <div style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '8px',
-                                                paddingTop: '8px',
-                                                borderTop: '1px solid rgba(0,0,0,0.06)'
-                                            }}>
-                                                <span style={{ fontSize: '1rem' }}>👑</span>
-                                                <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--ink)' }}>
-                                                    Moderación: <span style={{ color: 'var(--orange)', fontWeight: 800 }}>@{p.moderator}</span>
+                                            <div className="schedule-item-v3">
+                                                <span className="schedule-icon-v3">👑</span>
+                                                <div className="schedule-text-v3">
+                                                    <strong>@{p.moderator}</strong>
+                                                    <span>Moderadora</span>
                                                 </div>
                                             </div>
                                         )}
                                     </div>
                                 </div>
 
-                                <div className="candidate-footer-v2">
-                                    <div className="candidate-status-area-v2">
+                                <div className="candidate-footer-v3">
+                                    <div className="candidate-actions-v3">
                                         {p.status === 'pending' && (
-                                            <div className="pending-actions-v2">
-                                                <button onClick={() => handleUpdateStatus(p.id, 'official')} className="btn-approve-v2">Entrevista Confirmada ✅</button>
-                                                <button onClick={() => handleUpdateStatus(p.id, 'rejected')} className="btn-reject-v2">Rechazar ❌</button>
-                                            </div>
+                                            <>
+                                                <button onClick={() => handleUpdateStatus(p.id, 'official')} className="btn-v3 approve">Confirmar Cita ✅</button>
+                                                <button onClick={() => handleUpdateStatus(p.id, 'rejected')} className="btn-v3 reject">Rechazar ❌</button>
+                                            </>
                                         )}
                                         {p.status === 'official' && (
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                                <div className="status-official-v2">ENTREVISTA CONFIRMADA ✨</div>
-                                                <button
-                                                    onClick={() => handlePromoteToMember(p.id, p.roblox_user, p.tiktok_user)}
-                                                    className="btn-approve-v2"
-                                                    disabled={promotingIds.has(p.id)}
-                                                    style={{
-                                                        background: 'var(--yellow)',
-                                                        color: 'var(--ink)',
-                                                        border: '2px solid var(--ink)',
-                                                        cursor: promotingIds.has(p.id) ? 'not-allowed' : 'pointer',
-                                                        opacity: promotingIds.has(p.id) ? 0.7 : 1
-                                                    }}
-                                                >
-                                                    {promotingIds.has(p.id) ? 'Promoviendo...' : '¡Convertir en Miembro! 🐣'}
-                                                </button>
-                                            </div>
+                                            <button
+                                                onClick={() => handlePromoteToMember(p.id, p.roblox_user, p.tiktok_user)}
+                                                className="btn-v3 secondary"
+                                                disabled={promotingIds.has(p.id)}
+                                            >
+                                                {promotingIds.has(p.id) ? '⏳ Promoviendo...' : '🐣 ¡Convertir en Miembro Oficial!'}
+                                            </button>
                                         )}
                                         {p.status === 'rejected' && (
-                                            <div className="status-rejected-v2">RECHAZADO</div>
+                                            <div className="status-badge-v3" style={{ padding: '12px 20px', fontSize: '0.9rem' }}>🚫 POSTULANTE RECHAZADO</div>
                                         )}
                                     </div>
 
-                                    <div className="candidate-meta-actions-v2">
+                                    <div className="candidate-meta-v3">
                                         {p.status !== 'pending' && (
-                                            <button onClick={() => handleUpdateStatus(p.id, 'pending')} className="btn-undo-v2">Deshacer</button>
+                                            <button onClick={() => handleUpdateStatus(p.id, 'pending')} className="btn-icon-v3" title="Deshacer">↩️</button>
                                         )}
-                                        <button onClick={() => openDeleteModal(p.id)} className="btn-delete-pollito-v2">🗑️</button>
+                                        <button onClick={() => openDeleteModal(p.id)} className="btn-icon-v3" title="Eliminar definitivamente">🗑️</button>
                                     </div>
                                 </div>
                             </div>
