@@ -5,11 +5,16 @@ import { NextResponse } from 'next/server';
 export async function PUT(request, { params }) {
   const { id } = await params;
   const body = await request.json();
-  const { moderator } = body;
+  const { moderator, date, time } = body;
+
+  const updateData = {};
+  if (moderator !== undefined) updateData.moderator = moderator;
+  if (date !== undefined) updateData.date = date;
+  if (time !== undefined) updateData.time = time;
 
   const { error } = await supabaseAdmin
     .from('slots')
-    .update({ moderator })
+    .update(updateData)
     .eq('id', id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

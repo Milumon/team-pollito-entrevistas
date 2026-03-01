@@ -11,6 +11,10 @@ export default function SlotsPage() {
     const [loading, setLoading] = useState(false);
     const [fetchError, setFetchError] = useState(null);
     const [showAddModal, setShowAddModal] = useState(false);
+    const [editingId, setEditingId] = useState(null);
+    const [editDate, setEditDate] = useState('');
+    const [editTime, setEditTime] = useState('');
+    const [editModerator, setEditModerator] = useState('');
 
     useEffect(() => {
         fetchData();
@@ -33,10 +37,16 @@ export default function SlotsPage() {
         if (!newDate || !newTime || !moderator) return;
         setLoading(true);
         try {
+            // Convertimos la entrada (que asumimos es hora de Perú UTC-5) a UTC antes de guardar
+            const peruDate = new Date(`${newDate}T${newTime}:00-05:00`);
+            const utcISO = peruDate.toISOString();
+            const utcDateStr = utcISO.split('T')[0];
+            const utcTimeStr = utcISO.split('T')[1].slice(0, 8);
+
             const res = await fetch('/api/slots', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ date: newDate, time: newTime, moderator }),
+                body: JSON.stringify({ date: utcDateStr, time: utcTimeStr, moderator }),
             });
             if (!res.ok) throw new Error();
             setNewDate('');
@@ -70,12 +80,52 @@ export default function SlotsPage() {
         }
     }
 
-    const today = new Date().toISOString().split('T')[0];
+    async function handleStartEdit(slot) {
+        const d = new Date(`${slot.date}T${slot.time}Z`);
+        const lDate = d.toLocaleDateString('en-CA');
+        const lTime = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+        setEditingId(slot.id);
+        setEditDate(lDate);
+        setEditTime(lTime);
+        setEditModerator(slot.moderator || '');
+    }
+
+    async function handleSaveEdit(id) {
+        setLoading(true);
+        try {
+            // Convertimos la entrada local (Perú) a UTC
+            const peruDate = new Date(`${editDate}T${editTime}:00-05:00`);
+            const utcISO = peruDate.toISOString();
+            const utcDateStr = utcISO.split('T')[0];
+            const utcTimeStr = utcISO.split('T')[1].slice(0, 8);
+
+            const res = await fetch(`/api/slots/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ date: utcDateStr, time: utcTimeStr, moderator: editModerator }),
+            });
+            if (!res.ok) throw new Error();
+            setEditingId(null);
+            fetchData();
+        } catch {
+            alert('Error al actualizar horario');
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    const today = new Date().toLocaleDateString('en-CA');
     const rot = () => `${(Math.random() * 1.5 - 0.75).toFixed(1)}deg`;
 
     const groupedSlots = slots.reduce((acc, slot) => {
-        if (!acc[slot.date]) acc[slot.date] = [];
-        acc[slot.date].push(slot);
+        // Convertimos de UTC a local para el administrador
+        const d = new Date(`${slot.date}T${slot.time}Z`);
+        const localDate = d.toLocaleDateString('en-CA'); // YYYY-MM-DD local
+        const lTime = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+        if (!acc[localDate]) acc[localDate] = [];
+        acc[localDate].push({ ...slot, displayTime: lTime });
         return acc;
     }, {});
 
@@ -149,30 +199,60 @@ export default function SlotsPage() {
                         </div>
                         <div className="slots-list-v4">
                             {groupedSlots[date].map(slot => (
-                                <div key={slot.id} className={`slot-row-v4 ${slot.is_booked ? 'is-booked' : ''}`}>
-                                    <span className="slot-time-v4">{formatTime12h(slot.time)}</span>
-                                    <select
-                                        value={slot.moderator || ''}
-                                        onChange={e => handleEditModerator(slot.id, e.target.value)}
-                                        className="moderator-select-v4"
-                                    >
-                                        <option value="">(Sin mod)</option>
-                                        <option value="delfii.x0">@delfii.x0</option>
-                                        <option value="camvsssx">@camvsssx</option>
-                                    </select>
-                                    <div className="slot-actions-v4">
-                                        {slot.is_booked && <span className="booked-label-v4">RESERVADO</span>}
-                                        <button
-                                            onClick={() => {
-                                                if (slot.is_booked && !confirm('Este horario está RESERVADO. ¿Seguro que quieres eliminarlo?')) return;
-                                                handleDeleteSlot(slot.id);
-                                            }}
-                                            className="delete-mini-btn-v4"
-                                            title="Eliminar"
-                                        >
-                                            ×
-                                        </button>
-                                    </div>
+                                <div key={slot.id} className={`slot-row-v4 ${slot.is_booked ? 'is-booked' : ''} ${editingId === slot.id ? 'is-editing' : ''}`}>
+                                    {editingId === slot.id ? (
+                                        <div className="edit-controls-v4">
+                                            <div className="edit-inputs-group-v4">
+                                                <input
+                                                    type="date"
+                                                    value={editDate}
+                                                    onChange={e => setEditDate(e.target.value)}
+                                                    className="edit-input-v4"
+                                                    aria-label="Fecha"
+                                                />
+                                                <input
+                                                    type="time"
+                                                    value={editTime}
+                                                    onChange={e => setEditTime(e.target.value)}
+                                                    className="edit-input-v4"
+                                                    aria-label="Hora"
+                                                />
+                                                <select
+                                                    value={editModerator}
+                                                    onChange={e => setEditModerator(e.target.value)}
+                                                    className="edit-select-v4"
+                                                    aria-label="Moderadora"
+                                                >
+                                                    <option value="">(Sin mod)</option>
+                                                    <option value="delfii.x0">@delfii.x0</option>
+                                                    <option value="camvsssx">@camvsssx</option>
+                                                </select>
+                                            </div>
+                                            <div className="slot-actions-v4">
+                                                <button onClick={() => handleSaveEdit(slot.id)} className="save-btn-v4" title="Guardar">💾</button>
+                                                <button onClick={() => setEditingId(null)} className="cancel-btn-v4" title="Cancelar">✕</button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <span className="slot-time-v4">{formatTime12h(slot.displayTime)}</span>
+                                            <span className="slot-mod-v4">@{slot.moderator || 'sin mod'}</span>
+                                            <div className="slot-actions-v4">
+                                                {slot.is_booked && <span className="booked-label-v4">RESERVADO</span>}
+                                                <button onClick={() => handleStartEdit(slot)} className="edit-mini-btn-v4" title="Editar">✏️</button>
+                                                <button
+                                                    onClick={() => {
+                                                        if (slot.is_booked && !confirm('Este horario está RESERVADO. ¿Seguro que quieres eliminarlo?')) return;
+                                                        handleDeleteSlot(slot.id);
+                                                    }}
+                                                    className="delete-mini-btn-v4"
+                                                    title="Eliminar"
+                                                >
+                                                    ×
+                                                </button>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                             ))}
                         </div>

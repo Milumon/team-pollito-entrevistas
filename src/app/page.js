@@ -262,7 +262,7 @@ export default function Landing() {
                   <option disabled>Cargando horarios...</option>
                 ) : (
                   slots.map(slot => {
-                    const slotDate = new Date(`${slot.date}T${slot.time}`);
+                    const slotDate = new Date(`${slot.date}T${slot.time}Z`);
                     const localTime = slotDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
                     return (
                       <option key={slot.id} value={slot.id}>
@@ -468,7 +468,7 @@ export default function Landing() {
           <p className="empty-text">No hay entrevistas por confirmar.</p>
         ) : (
           pendingPollitos.map(p => {
-            const slotDate = p.date && p.time ? new Date(`${p.date}T${p.time}`) : null;
+            const slotDate = p.date && p.time ? new Date(`${p.date}T${p.time}Z`) : null;
             const localTime = slotDate ? slotDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : null;
             return (
               <div key={p.id} className="pollito-card" style={{ transform: `rotate(${rot()})`, flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
@@ -549,7 +549,7 @@ export default function Landing() {
           <p className="empty-text">Aún no hay entrevistas confirmadas.</p>
         ) : (
           officialPollitos.map(p => {
-            const slotDate = p.date && p.time ? new Date(`${p.date}T${p.time}`) : null;
+            const slotDate = p.date && p.time ? new Date(`${p.date}T${p.time}Z`) : null;
             const localTime = slotDate ? slotDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : null;
             return (
               <div key={p.id} className="pollito-card" style={{ transform: `rotate(${rot()})`, flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
