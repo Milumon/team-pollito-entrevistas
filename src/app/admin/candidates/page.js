@@ -5,6 +5,7 @@ import { formatDayMonth, formatTime12h, rot } from '@/lib/dates';
 
 export default function CandidatesPage() {
     const [pollitos, setPollitos] = useState([]);
+    const [loadingData, setLoadingData] = useState(true);
     const [fetchError, setFetchError] = useState(null);
     const [showHistory, setShowHistory] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -16,6 +17,7 @@ export default function CandidatesPage() {
 
     async function fetchData() {
         try {
+            setLoadingData(true);
             setFetchError(null);
             const res = await fetch('/api/pollitos');
             const data = await res.json();
@@ -23,6 +25,8 @@ export default function CandidatesPage() {
             setPollitos(Array.isArray(data) ? data : []);
         } catch (err) {
             setFetchError(err.message);
+        } finally {
+            setLoadingData(false);
         }
     }
 
@@ -124,7 +128,13 @@ export default function CandidatesPage() {
             )}
 
             <div className="candidates-container-v4">
-                {currentCandidates.length === 0 && !fetchError ? (
+                {loadingData ? (
+                    <>
+                        <div className="skeleton-card skeleton" />
+                        <div className="skeleton-card skeleton" />
+                        <div className="skeleton-card skeleton" />
+                    </>
+                ) : currentCandidates.length === 0 && !fetchError ? (
                     <div className="empty-state-v3" style={{ padding: '40px 20px' }}>
                         <span className="empty-icon-v3">{showHistory ? '🏜️' : '🐣'}</span>
                         <p>{showHistory ? 'No hay historial de entrevistas pasadas.' : 'No hay candidatos pendientes por ahora.'}</p>

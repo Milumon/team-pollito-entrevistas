@@ -6,16 +6,26 @@ import { formatFull, formatMedium } from '@/lib/dates';
 export default function Landing() {
   const [slots, setSlots] = useState([]);
   const [pollitos, setPollitos] = useState([]);
-  const [formData, setFormData] = useState({ roblox_user: '', tiktok_user: '', slot_id: '' });
+  const [formData, setFormData] = useState({ roblox_user: '', tiktok_user: '', slot_id: '', website: '' });
+  const [lastSubmittedSlot, setLastSubmittedSlot] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [loadingData, setLoadingData] = useState(true);
+  const [loadTimestamp, setLoadTimestamp] = useState(0);
   const [success, setSuccess] = useState(false);
   const [watchedLive, setWatchedLive] = useState(false);
   const [hasEmoji, setHasEmoji] = useState(false);
+  const [showTiktokExample, setShowTiktokExample] = useState(false);
+  const [showEmojiHelp, setShowEmojiHelp] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
 
   const [members, setMembers] = useState([]);
   const [showMembers, setShowMembers] = useState(false);
 
-  useEffect(() => { fetchData(); fetchMembers(); }, []);
+  useEffect(() => {
+    fetchData();
+    fetchMembers();
+    setLoadTimestamp(Date.now());
+  }, []);
 
   async function fetchMembers() {
     const res = await fetch('/api/members');
@@ -24,14 +34,21 @@ export default function Landing() {
   }
 
   async function fetchData() {
-    const [slotsRes, pollitosRes] = await Promise.all([
-      fetch('/api/slots'),
-      fetch('/api/pollitos'),
-    ]);
-    const slotsData = await slotsRes.json();
-    const pollitosData = await pollitosRes.json();
-    setSlots(Array.isArray(slotsData) ? slotsData : []);
-    setPollitos(Array.isArray(pollitosData) ? pollitosData : []);
+    try {
+      setLoadingData(true);
+      const [slotsRes, pollitosRes] = await Promise.all([
+        fetch('/api/slots'),
+        fetch('/api/pollitos'),
+      ]);
+      const slotsData = await slotsRes.json();
+      const pollitosData = await pollitosRes.json();
+      setSlots(Array.isArray(slotsData) ? slotsData : []);
+      setPollitos(Array.isArray(pollitosData) ? pollitosData : []);
+    } catch (err) {
+      console.error("Error fetching data:", err);
+    } finally {
+      setLoadingData(false);
+    }
   }
 
   async function handleSubmit(e) {
@@ -41,19 +58,25 @@ export default function Landing() {
       const res = await fetch('/api/pollitos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, slot_id: Number(formData.slot_id) }),
+        body: JSON.stringify({
+          ...formData,
+          slot_id: Number(formData.slot_id),
+          ts: loadTimestamp
+        }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || 'Error desconocido');
       }
+      const selectedSlot = slots.find(s => String(s.id) === String(formData.slot_id));
+      setLastSubmittedSlot(selectedSlot);
       setSuccess(true);
-      setFormData({ roblox_user: '', tiktok_user: '', slot_id: '' });
+      setFormData({ roblox_user: '', tiktok_user: '', slot_id: '', website: '' });
       setWatchedLive(false);
       setHasEmoji(false);
       fetchData();
-    } catch {
-      alert('Hubo un error al agendar la entrevista. Por favor intenta de nuevo.');
+    } catch (err) {
+      alert(err.message || 'Hubo un error al agendar la entrevista. Por favor intenta de nuevo.');
     } finally {
       setLoading(false);
     }
@@ -94,40 +117,83 @@ export default function Landing() {
               background: 'var(--cream)',
               border: '3px solid var(--ink-black)',
               borderRadius: 16,
-              padding: '20px 16px',
+              padding: '24px 20px',
               textAlign: 'center',
-              marginTop: 8,
+              marginTop: 12,
+              boxShadow: '0 8px 0 rgba(0,0,0,0.1)'
             }}>
-              <p style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', fontWeight: 700, marginBottom: 8 }}>
-                📩 ¡Último paso importante!
+              <p style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', fontWeight: 800, marginBottom: 12, color: 'var(--ink)' }}>
+                📩 ¡PASO FINAL OBLIGATORIO!
               </p>
-              <p style={{ fontSize: '0.95rem', lineHeight: 1.5, marginBottom: 14 }}>
-                Escríbele un mensaje por TikTok a <strong>@camvsssx</strong> <b>y</b> <strong>@delfii.x0</strong> indicándoles que ya separaste tu cita para la entrevista.
+
+              <p style={{ fontSize: '1rem', lineHeight: 1.5, marginBottom: 16, color: 'var(--ink-soft)' }}>
+                Para confirmar tu cita, debes enviarle un mensaje por TikTok a la moderadora de tu horario:
               </p>
-              <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
-                <a
-                  href="https://www.tiktok.com/@camvsssx"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-primary"
-                  style={{ display: 'inline-block', textDecoration: 'none', fontSize: '1rem', padding: '12px 24px' }}
+
+              <div style={{
+                background: 'white',
+                padding: '16px',
+                borderRadius: 12,
+                border: '2px dashed var(--orange)',
+                marginBottom: 20,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 10
+              }}>
+                <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--orange)' }}>
+                  @{lastSubmittedSlot?.moderator || 'camvsssx'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(lastSubmittedSlot?.moderator || 'camvsssx');
+                    alert('¡Nombre de la moderadora copiado! 📋');
+                  }}
+                  className="btn-help"
+                  style={{ padding: '6px 16px', fontSize: '0.85rem' }}
                 >
-                  Ir a TikTok de @camvsssx 🎵
-                </a>
-                <a
-                  href="https://www.tiktok.com/@delfii.x0"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-primary"
-                  style={{ display: 'inline-block', textDecoration: 'none', fontSize: '1rem', padding: '12px 24px', background: 'var(--pink)', borderColor: 'var(--pink)' }}
-                >
-                  Ir a TikTok de @delfii.x0 🎵
-                </a>
+                  📋 Copiar Usuario
+                </button>
               </div>
+
+              <div style={{
+                textAlign: 'left',
+                background: 'rgba(0,0,0,0.03)',
+                padding: '12px',
+                borderRadius: 10,
+                fontSize: '0.88rem',
+                lineHeight: 1.4
+              }}>
+                <p style={{ marginBottom: 8 }}><strong>¿Qué pasa ahora?</strong></p>
+                <p style={{ marginBottom: 6 }}>1. Tu nombre aparecerá abajo en la sección de <strong style={{ color: 'var(--orange)' }}>🕒 Entrevistas por confirmar</strong>.</p>
+                <p>2. Una vez que la moderadora reciba tu mensaje y valide tus datos, te pasará a la lista de <strong style={{ color: 'var(--blue)' }}>✅ Entrevistas confirmadas</strong>.</p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSuccess(false)}
+                className="btn-submit"
+                style={{ marginTop: 24, width: '100%', background: 'var(--ink)', color: 'white' }}
+              >
+                Entendido, ir a ver mi estado 🐣
+              </button>
             </div>
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
+            {/* Honeypot field - hidden from users */}
+            <div style={{ display: 'none' }} aria-hidden="true">
+              <input
+                type="text"
+                name="website"
+                value={formData.website}
+                onChange={e => setFormData({ ...formData, website: e.target.value })}
+                tabIndex="-1"
+                autoComplete="off"
+              />
+            </div>
+
             <div className="form-group">
               <label className="form-label">Tu Usuario de Roblox</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -144,12 +210,38 @@ export default function Landing() {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Tu Usuario de TikTok</label>
+              <div className="form-help-row">
+                <label className="form-label">Tu Usuario de TikTok</label>
+                <button
+                  type="button"
+                  className="btn-help"
+                  onClick={() => setShowTiktokExample(!showTiktokExample)}
+                >
+                  {showTiktokExample ? 'Cerrar' : '(?) Ver ejemplo'}
+                </button>
+              </div>
+
+              {showTiktokExample && (
+                <div className="help-card-v2">
+                  <div className="help-status-badge">Tutorial</div>
+                  <div className="example-img-container">
+                    <img
+                      src="/tiktok_user_example.png"
+                      alt="Donde encontrar tu usuario"
+                    />
+                  </div>
+                  <div className="help-caption">
+                    <p>Mira la flecha amarilla: el usuario es el que empieza con <strong>@</strong> (ej: @milumon_gaming).</p>
+                    <p style={{ marginTop: 4, fontSize: '0.75rem', opacity: 0.7 }}>⚠️ No pongas tu nombre, pon tu usuario.</p>
+                  </div>
+                </div>
+              )}
+
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--ink)' }}>@</span>
                 <input
                   type="text"
-                  placeholder="TikTokFan"
+                  placeholder="milumon_gaming"
                   required
                   value={formData.tiktok_user}
                   onChange={e => setFormData({ ...formData, tiktok_user: e.target.value })}
@@ -166,18 +258,21 @@ export default function Landing() {
                 onChange={e => setFormData({ ...formData, slot_id: e.target.value })}
               >
                 <option value="">Selecciona una fecha...</option>
-                {slots.map(slot => {
-                  // Convertir hora del slot a local en formato AM/PM
-                  const slotDate = new Date(`${slot.date}T${slot.time}`);
-                  const localTime = slotDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
-                  return (
-                    <option key={slot.id} value={slot.id}>
-                      {formatFull(slot.date)} — {localTime} (hora local)
-                    </option>
-                  );
-                })}
+                {loadingData ? (
+                  <option disabled>Cargando horarios...</option>
+                ) : (
+                  slots.map(slot => {
+                    const slotDate = new Date(`${slot.date}T${slot.time}`);
+                    const localTime = slotDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+                    return (
+                      <option key={slot.id} value={slot.id}>
+                        {formatFull(slot.date)} — {localTime} (hora local)
+                      </option>
+                    );
+                  })
+                )}
               </select>
-              {slots.length === 0 && (
+              {!loadingData && slots.length === 0 && (
                 <p className="no-slots-warning">No hay horarios disponibles por ahora.</p>
               )}
               {/* Mostrar moderadora del horario seleccionado */}
@@ -192,32 +287,90 @@ export default function Landing() {
               })()}
             </div>
 
-            <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 16 }}>
+            <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 16, background: 'var(--sky-light)', padding: '14px', borderRadius: '14px', border: '2px solid var(--sky)' }}>
               <input
                 type="checkbox"
                 id="watchedLive"
                 required
                 checked={watchedLive}
                 onChange={e => setWatchedLive(e.target.checked)}
-                style={{ width: '20px', height: '20px', cursor: 'pointer', flexShrink: 0 }}
+                style={{ width: '28px', height: '28px', cursor: 'pointer', flexShrink: 0 }}
               />
-              <label htmlFor="watchedLive" style={{ fontSize: '0.95rem', color: 'var(--ink)' }}>
+              <label htmlFor="watchedLive" style={{ fontSize: '0.92rem', color: 'var(--ink)', fontWeight: 800, cursor: 'pointer', lineHeight: 1.3 }}>
                 Confirmo que he visto el live por más de 3 días 📺
               </label>
             </div>
 
-            <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12, marginBottom: 20 }}>
-              <input
-                type="checkbox"
-                id="hasEmoji"
-                required
-                checked={hasEmoji}
-                onChange={e => setHasEmoji(e.target.checked)}
-                style={{ width: '20px', height: '20px', cursor: 'pointer', flexShrink: 0 }}
-              />
-              <label htmlFor="hasEmoji" style={{ fontSize: '0.95rem', color: 'var(--ink)' }}>
-                Confirmo que tengo el emoji 🐣 en mi nombre de TikTok
-              </label>
+            <div className="form-group" style={{ marginTop: 24, borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: 20 }}>
+              <div className="form-help-row">
+                <label className="form-label" style={{ marginBottom: 0 }}>Paso Final: El Pollito 🐣</label>
+                <button
+                  type="button"
+                  className="btn-help"
+                  onClick={() => setShowEmojiHelp(!showEmojiHelp)}
+                >
+                  {showEmojiHelp ? 'Ocultar guía' : '(?) Ver cómo ponerlo'}
+                </button>
+              </div>
+
+              {showEmojiHelp && (
+                <div className="help-card-v2" style={{ marginTop: 12, border: '2px solid var(--orange)', background: '#fffcf5' }}>
+                  <div className="help-status-badge" style={{ background: 'var(--orange)' }}>Guía Rápida</div>
+
+                  <div className="example-img-container" style={{ marginBottom: 16, border: '1px solid var(--ink)', borderRadius: 8, overflow: 'hidden' }}>
+                    <img
+                      src="/tiktok_emoji_example.png"
+                      alt="Ejemplo de nombre con pollito"
+                      style={{ width: '100%', display: 'block' }}
+                    />
+                  </div>
+
+                  <div className="steps-list" style={{ textAlign: 'left', marginBottom: 16 }}>
+                    <div className="step-item" style={{ marginBottom: 8 }}>
+                      <span className="step-number" style={{ width: 22, height: 22, fontSize: '0.75rem' }}>1</span>
+                      <span style={{ fontSize: '0.85rem' }}>Copia el emoji con el botón de abajo</span>
+                    </div>
+                    <div className="step-item" style={{ marginBottom: 8 }}>
+                      <span className="step-number" style={{ width: 22, height: 22, fontSize: '0.75rem' }}>2</span>
+                      <span style={{ fontSize: '0.85rem' }}>Ve a "Editar perfil" en TikTok</span>
+                    </div>
+                    <div className="step-item">
+                      <span className="step-number" style={{ width: 22, height: 22, fontSize: '0.75rem' }}>3</span>
+                      <span style={{ fontSize: '0.85rem' }}>Pégalo al final de tu <b>Nombre</b></span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    className={`btn-copy-v2 ${copySuccess ? 'success' : ''}`}
+                    style={{ width: '100%', minHeight: 44, fontSize: '0.9rem' }}
+                    onClick={() => {
+                      navigator.clipboard.writeText('🐣');
+                      setCopySuccess(true);
+                      setTimeout(() => setCopySuccess(false), 2000);
+                    }}
+                  >
+                    {copySuccess ? '¡COPIADO! ✅' : 'COPIAR EMOJI 🐣'}
+                  </button>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 16, background: 'var(--yellow-light)', padding: '14px', borderRadius: '14px', border: '2px solid var(--yellow)' }}>
+                <input
+                  type="checkbox"
+                  id="hasEmoji"
+                  required
+                  checked={hasEmoji}
+                  onChange={e => setHasEmoji(e.target.checked)}
+                  style={{ width: '28px', height: '28px', cursor: 'pointer', flexShrink: 0 }}
+                />
+                <label htmlFor="hasEmoji" style={{ fontSize: '0.92rem', color: 'var(--ink)', fontWeight: 800, cursor: 'pointer', lineHeight: 1.3 }}>
+                  Confirmo que YA TENGO el pollito 🐣 en mi nombre de TikTok
+                </label>
+              </div>
+              <p style={{ fontSize: '0.75rem', color: 'var(--ink-soft)', opacity: 0.6, marginTop: 8, textAlign: 'center' }}>
+                * Este paso es obligatorio para ser Pollito Oficial.
+              </p>
             </div>
 
             <button type="submit" className="btn-primary" disabled={loading || slots.length === 0 || !watchedLive || !hasEmoji || !formData.roblox_user.trim() || !formData.tiktok_user.trim()}>
@@ -306,7 +459,12 @@ export default function Landing() {
         <p style={{ fontSize: '0.95rem', color: 'var(--ink)', marginBottom: 12, opacity: 0.8 }}>
           Aquí aparecen quienes han llenado el formulario y están pendientes de confirmar su entrevista.
         </p>
-        {pendingPollitos.length === 0 ? (
+        {loadingData ? (
+          <>
+            <div className="skeleton-card skeleton" />
+            <div className="skeleton-card skeleton" />
+          </>
+        ) : pendingPollitos.length === 0 ? (
           <p className="empty-text">No hay entrevistas por confirmar.</p>
         ) : (
           pendingPollitos.map(p => {
@@ -382,7 +540,12 @@ export default function Landing() {
         <p style={{ fontSize: '0.95rem', color: 'var(--ink)', marginBottom: 8 }}>
           Aquí aparecen solo quienes ya han realizado el paso de escribir a las moderadoras <strong>@delfii.x0</strong> o <strong>@camvsssx</strong> y han confirmado su entrevista.
         </p>
-        {officialPollitos.length === 0 ? (
+        {loadingData ? (
+          <>
+            <div className="skeleton-card skeleton" />
+            <div className="skeleton-card skeleton" />
+          </>
+        ) : officialPollitos.length === 0 ? (
           <p className="empty-text">Aún no hay entrevistas confirmadas.</p>
         ) : (
           officialPollitos.map(p => {
