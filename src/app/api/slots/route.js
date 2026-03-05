@@ -1,6 +1,8 @@
 import { supabaseAdmin } from '@/lib/supabase';
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/slots — todos los slots disponibles para el formulario público
 export async function GET() {
   const now = new Date().toISOString();

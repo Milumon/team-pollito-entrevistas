@@ -9,6 +9,12 @@ export default function MembersPage() {
     const [loading, setLoading] = useState(false);
     const [fetchError, setFetchError] = useState(null);
 
+    // Edit state
+    const [editingMember, setEditingMember] = useState(null);
+    const [editRoblox, setEditRoblox] = useState('');
+    const [editTiktok, setEditTiktok] = useState('');
+    const [isUpdating, setIsUpdating] = useState(false);
+
     useEffect(() => {
         fetchData();
     }, []);
@@ -50,6 +56,32 @@ export default function MembersPage() {
         if (!confirm('¿Seguro que deseas eliminar este miembro del Team Oficial?')) return;
         await fetch(`/api/members/${id}`, { method: 'DELETE' });
         fetchData();
+    }
+
+    function openEditModal(member) {
+        setEditingMember(member);
+        setEditRoblox(member.roblox_user || '');
+        setEditTiktok(member.tiktok_user || '');
+    }
+
+    async function handleUpdateMember(e) {
+        e.preventDefault();
+        if (!editingMember) return;
+        setIsUpdating(true);
+        try {
+            const res = await fetch(`/api/members/${editingMember.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ roblox_user: editRoblox, tiktok_user: editTiktok }),
+            });
+            if (!res.ok) throw new Error();
+            setEditingMember(null);
+            fetchData();
+        } catch {
+            alert('Error al actualizar miembro');
+        } finally {
+            setIsUpdating(false);
+        }
     }
 
     const rot = () => `${(Math.random() * 1.5 - 0.75).toFixed(1)}deg`;
@@ -106,15 +138,15 @@ export default function MembersPage() {
                         <div key={m.id} className="candidate-card-v2" style={{ transform: `rotate(${rot()})`, border: '3px solid var(--yellow)' }}>
                             <div className="candidate-info-v2">
                                 <div className="candidate-primary-v2" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
-                                    <span className="candidate-roblox">Roblox: @{(m.roblox_user || '').replace(/^@+/, '')}</span>
+                                    <span className="candidate-roblox">Roblox: {m.roblox_user}</span>
                                     <span className="candidate-tiktok">
                                         TikTok: <a
-                                            href={`https://www.tiktok.com/search/user?q=${(m.tiktok_user || '').replace(/^@+/, '')}`}
+                                            href={`https://www.tiktok.com/search/user?q=${m.tiktok_user}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             style={{ color: 'inherit', textDecoration: 'underline' }}
                                         >
-                                            @{(m.tiktok_user || '').replace(/^@+/, '')}
+                                            {m.tiktok_user}
                                         </a>
                                     </span>
                                 </div>
@@ -127,6 +159,7 @@ export default function MembersPage() {
                                     <span className="badge-official" style={{ background: 'var(--yellow)', color: 'var(--ink)' }}>POLLITO OFICIAL</span>
                                 </div>
                                 <div className="candidate-meta-actions-v2">
+                                    <button onClick={() => openEditModal(m)} className="btn-edit-v2" style={{ border: 'none', background: 'transparent', fontSize: '1.2rem', cursor: 'pointer' }}>✏️</button>
                                     <button onClick={() => handleDeleteMember(m.id)} className="btn-delete-pollito-v2">🗑️</button>
                                 </div>
                             </div>
@@ -134,6 +167,50 @@ export default function MembersPage() {
                     ))
                 )}
             </div>
+
+            {/* Modal Editar */}
+            {editingMember && (
+                <div className="modal-overlay">
+                    <div className="modal-card-v3" style={{ maxWidth: 450 }}>
+                        <div className="modal-header-v3">
+                            <h3>Editar Pollito Oficial 👑</h3>
+                            <button onClick={() => setEditingMember(null)} className="close-btn">×</button>
+                        </div>
+                        <form onSubmit={handleUpdateMember}>
+                            <div className="modal-body-v3">
+                                <div className="input-group-v3">
+                                    <label>Roblox User</label>
+                                    <input
+                                        type="text"
+                                        value={editRoblox}
+                                        onChange={e => setEditRoblox(e.target.value)}
+                                        required
+                                        placeholder="Ej: RobloxPlayer"
+                                    />
+                                </div>
+                                <div className="input-group-v3" style={{ marginTop: 16 }}>
+                                    <label>TikTok User</label>
+                                    <input
+                                        type="text"
+                                        value={editTiktok}
+                                        onChange={e => setEditTiktok(e.target.value)}
+                                        required
+                                        placeholder="Ej: TikTokFan"
+                                    />
+                                </div>
+                            </div>
+                            <div className="modal-footer-v3">
+                                <button type="submit" disabled={isUpdating} className="btn-primary-v3">
+                                    {isUpdating ? 'GUARDANDO...' : 'GUARDAR CAMBIOS ✨'}
+                                </button>
+                                <button type="button" onClick={() => setEditingMember(null)} className="btn-secondary-v3">
+                                    CANCELAR
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

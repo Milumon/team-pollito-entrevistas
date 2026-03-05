@@ -22,9 +22,18 @@ export async function POST(request) {
         return NextResponse.json({ error: 'Faltan campos (roblox_user o tiktok_user)' }, { status: 400 });
     }
 
+    // Resolver avatar antes de guardar para ahorrar recursos despues
+    let avatar_url = null;
+    try {
+        const { getRobloxAvatar } = await import('@/lib/roblox');
+        avatar_url = await getRobloxAvatar(roblox_user);
+    } catch (e) {
+        console.error('Error resolving avatar for new member:', e);
+    }
+
     const { data, error } = await supabaseAdmin
         .from('members')
-        .insert({ roblox_user, tiktok_user })
+        .insert({ roblox_user, tiktok_user, avatar_url })
         .select()
         .single();
 

@@ -1,6 +1,8 @@
 import { supabaseAdmin } from '@/lib/supabase';
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/admin/slots — todos los slots (incluyendo reservados) para el panel admin
 export async function GET() {
   const { data, error } = await supabaseAdmin

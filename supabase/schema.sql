@@ -69,5 +69,51 @@ CREATE POLICY "pollitos_insert_public"
   ON pollitos FOR INSERT
   WITH CHECK (true);
 
+-- ----------------------------
+-- 5. Tabla de pollitos que solicitan regresar (baneados)
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS pollitos_regresar (
+  id              BIGSERIAL PRIMARY KEY,
+  roblox_user     TEXT        NOT NULL,
+  tiktok_user     TEXT        NOT NULL,
+  ban_reason      TEXT        NOT NULL,
+  return_reason   TEXT        NOT NULL,
+  preferred_date  DATE        NOT NULL,
+  status          TEXT        NOT NULL DEFAULT 'pending'
+                              CHECK (status IN ('pending', 'approved', 'rejected')),
+  ip              TEXT,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE pollitos_regresar ENABLE ROW LEVEL SECURITY;
+
+-- Lectura pública (para mostrar la lista censurada en landing)
+CREATE POLICY "regresar_read_public"
+  ON pollitos_regresar FOR SELECT
+  USING (true);
+
+-- Inserción pública (formulario de la landing)
+CREATE POLICY "regresar_insert_public"
+  ON pollitos_regresar FOR INSERT
+  WITH CHECK (true);
+
+-- ----------------------------
+-- 6. Tabla de miembros oficiales (Team)
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS members (
+  id           BIGSERIAL PRIMARY KEY,
+  roblox_user  TEXT        NOT NULL,
+  tiktok_user  TEXT        NOT NULL,
+  avatar_url   TEXT,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE members ENABLE ROW LEVEL SECURITY;
+
+-- Lectura pública de miembros para el modal de la landing
+CREATE POLICY "members_read_public"
+  ON members FOR SELECT
+  USING (true);
+
 -- Las operaciones de escritura en slots y actualización de pollitos
 -- quedan restringidas al service_role (panel admin via API)

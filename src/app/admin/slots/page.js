@@ -15,6 +15,9 @@ export default function SlotsPage() {
     const [editDate, setEditDate] = useState('');
     const [editTime, setEditTime] = useState('');
     const [editModerator, setEditModerator] = useState('');
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [toDeleteId, setToDeleteId] = useState(null);
+    const [isBookedForDelete, setIsBookedForDelete] = useState(false);
 
     useEffect(() => {
         fetchData();
@@ -61,10 +64,27 @@ export default function SlotsPage() {
         }
     }
 
-    async function handleDeleteSlot(id) {
-        if (!confirm('¿Seguro que deseas eliminar este horario?')) return;
-        await fetch(`/api/slots/${id}`, { method: 'DELETE' });
-        fetchData();
+    function openDeleteModal(slot) {
+        setToDeleteId(slot.id);
+        setIsBookedForDelete(slot.is_booked);
+        setShowDeleteModal(true);
+    }
+
+    async function handleDeleteConfirmed() {
+        if (!toDeleteId) return;
+        setLoading(true);
+        try {
+            const res = await fetch(`/api/slots/${toDeleteId}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'No se pudo eliminar el horario');
+            setShowDeleteModal(false);
+            setToDeleteId(null);
+            fetchData();
+        } catch (err) {
+            alert(`Error: ${err.message}`);
+        } finally {
+            setLoading(false);
+        }
     }
 
     async function handleEditModerator(slotId, newModerator) {
@@ -143,6 +163,25 @@ export default function SlotsPage() {
             </div>
 
             {fetchError && <div className="error-banner">Error: {fetchError}</div>}
+
+            {showDeleteModal && (
+                <div className="modal-overlay" style={{ zIndex: 1000 }}>
+                    <div className="modal-card" style={{ minWidth: 320, border: '4px solid var(--red)', borderRadius: 20 }}>
+                        <h3 style={{ marginBottom: 16, fontSize: '1.2rem', fontWeight: 800, color: 'var(--ink)' }}>
+                            {isBookedForDelete ? '⚠️ ¿Eliminar Horario Reservado?' : '¿Eliminar este horario?'}
+                        </h3>
+                        <p style={{ marginBottom: 22, color: 'var(--ink-soft)', lineHeight: 1.5 }}>
+                            {isBookedForDelete
+                                ? 'Este horario ya está RESERVADO por un candidato. Si lo eliminas, el candidato perderá su cita. ¿Estás seguro?'
+                                : 'Esta acción no se puede deshacer.'}
+                        </p>
+                        <div style={{ display: 'flex', gap: 16, justifyContent: 'center', width: '100%' }}>
+                            <button className="btn-v3 reject" style={{ flex: 1 }} onClick={handleDeleteConfirmed}>Eliminar</button>
+                            <button className="btn-v3 secondary" style={{ flex: 1 }} onClick={() => setShowDeleteModal(false)}>Cancelar</button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* ── Add Slot Modal ── */}
             {showAddModal && (
@@ -241,10 +280,7 @@ export default function SlotsPage() {
                                                 {slot.is_booked && <span className="booked-label-v4">RESERVADO</span>}
                                                 <button onClick={() => handleStartEdit(slot)} className="edit-mini-btn-v4" title="Editar">✏️</button>
                                                 <button
-                                                    onClick={() => {
-                                                        if (slot.is_booked && !confirm('Este horario está RESERVADO. ¿Seguro que quieres eliminarlo?')) return;
-                                                        handleDeleteSlot(slot.id);
-                                                    }}
+                                                    onClick={() => openDeleteModal(slot)}
                                                     className="delete-mini-btn-v4"
                                                     title="Eliminar"
                                                 >

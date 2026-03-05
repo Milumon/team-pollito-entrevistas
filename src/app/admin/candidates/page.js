@@ -192,15 +192,15 @@ export default function CandidatesPage() {
                             <div key={p.id} className="candidate-card-v3">
                                 <div className="candidate-info-row-v3">
                                     <div className="candidate-main-v3">
-                                        <span className="candidate-roblox-v3">@{(p.roblox_user || '').replace(/^@+/, '')}</span>
+                                        <span className="candidate-roblox-v3">{p.roblox_user}</span>
                                         <span className="candidate-tiktok-v3">
                                             TikTok: <a
-                                                href={`https://www.tiktok.com/search/user?q=${(p.tiktok_user || '').replace(/^@+/, '')}`}
+                                                href={`https://www.tiktok.com/search/user?q=${p.tiktok_user}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 style={{ color: 'inherit', textDecoration: 'underline' }}
                                             >
-                                                @{(p.tiktok_user || '').replace(/^@+/, '')}
+                                                {p.tiktok_user}
                                             </a>
                                         </span>
                                     </div>

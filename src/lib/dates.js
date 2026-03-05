@@ -40,5 +40,5 @@ export function formatTime12h(timeStr) {
   const [hours, minutes] = timeStr.split(':');
   const d = new Date();
   d.setHours(parseInt(hours, 10), parseInt(minutes, 10));
-  return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+  return d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: true });
 }

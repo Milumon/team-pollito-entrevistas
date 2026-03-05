@@ -23,19 +23,36 @@ export async function PUT(request, { params }) {
 
 // DELETE /api/slots/[id] — eliminar horario (solo admin)
 export async function DELETE(request, { params }) {
-  const { id } = await params;
+  try {
+    const { id } = await params;
+    if (!id) {
+      return NextResponse.json({ error: 'ID de horario no proporcionado' }, { status: 400 });
+    }
 
-  // Primero eliminamos candidatos asociados para evitar error de FK (si no hay cascade)
-  await supabaseAdmin
-    .from('pollitos')
-    .delete()
-    .eq('slot_id', id);
+    // Primero eliminamos candidatos asociados para evitar error de FK (si no hay cascade)
+    const { error: errorCandidates } = await supabaseAdmin
+      .from('pollitos')
+      .delete()
+      .eq('slot_id', id);
 
-  const { error } = await supabaseAdmin
-    .from('slots')
-    .delete()
-    .eq('id', id);
+    if (errorCandidates) {
+      console.error('Error al eliminar candidatos del slot:', errorCandidates);
+      return NextResponse.json({ error: `Error al limpiar candidatos: ${errorCandidates.message}` }, { status: 500 });
+    }
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ success: true });
+    const { error } = await supabaseAdmin
+      .from('slots')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error al eliminar slot:', error);
+      return NextResponse.json({ error: `Error al eliminar el horario: ${error.message}` }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error('Error fatal en DELETE /api/slots/[id]:', err);
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+  }
 }

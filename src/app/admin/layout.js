@@ -105,6 +105,12 @@ export default function AdminLayout({ children }) {
                     >
                         👑 Oficiales
                     </Link>
+                    <Link
+                        href="/admin/regresar"
+                        className={`tab-link-v5 ${pathname.includes('/regresar') ? 'active' : ''}`}
+                    >
+                        🔄 Regresar
+                    </Link>
                 </nav>
             </header>
 
