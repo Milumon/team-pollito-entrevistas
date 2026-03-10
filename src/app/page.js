@@ -1527,47 +1527,74 @@ export default function Landing() {
                 </p>
                 {members.length === 0 ? (
                   <p className="empty-text">Aún no hay pollitos oficiales agregados.</p>
-                ) : (
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-                    gap: 16,
-                    justifyContent: 'center'
-                  }}>
-                    {members.map(m => {
-                      const rUser = (m.roblox_user || '').replace(/^@+/, '');
-                      // Prioridad 1: Avatar guardado en DB. Prioridad 2: Avatar obtenido de cache/API fallback.
-                      const avatarUrl = m.avatar_url || avatars[rUser] || avatars[m.roblox_user];
-                      return (
-                        <div key={m.id} className="pollito-card" style={{ transform: `rotate(${rot()})`, border: '3px solid var(--yellow)', margin: 0, minWidth: 180, flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '8px' }}>
-                          {avatarUrl ? (
-                            <img
-                              src={avatarUrl}
-                              alt={rUser}
-                              style={{ width: 80, height: 80, borderRadius: '50%', border: '3px solid var(--ink)', background: 'var(--cream)', marginBottom: 4 }}
-                            />
-                          ) : (
-                            <div style={{ width: 80, height: 80, borderRadius: '50%', border: '3px solid var(--ink)', background: 'var(--cream-dark)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', marginBottom: 4 }}>
-                              🐣
-                            </div>
-                          )}
-                          <span className="pollito-name" style={{ alignSelf: 'stretch', textAlign: 'start' }}>Roblox: @{rUser}</span>
-                          <div className="pollito-name" style={{ marginTop: -4, alignSelf: 'stretch', textAlign: 'start' }}>
-                            TikTok: <a
-                              href={`https://www.tiktok.com/search/user?q=${(m.tiktok_user || '').replace(/^@+/, '')}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              style={{ color: 'var(--ink)', textDecoration: 'underline' }}
-                            >
-                              @{(m.tiktok_user || '').replace(/^@+/, '')}
-                            </a>
-                          </div>
-                          <span className="badge-official" style={{ fontSize: '0.75rem' }}>POLLITO OFICIAL</span>
+                ) : (() => {
+                  const now = new Date();
+                  const twoDaysAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000);
+                  const isNew = (m) => m.created_at && new Date(m.created_at) >= twoDaysAgo;
+                  const newMembers = members.filter(isNew);
+                  // Sort: new members first, then the rest
+                  const sortedMembers = [...members].sort((a, b) => {
+                    const aNew = isNew(a);
+                    const bNew = isNew(b);
+                    if (aNew && !bNew) return -1;
+                    if (!aNew && bNew) return 1;
+                    return 0;
+                  });
+
+                  return (
+                    <>
+                      {newMembers.length > 0 && (
+                        <div className="new-members-banner">
+                          🎉 ¡{newMembers.length} {newMembers.length === 1 ? 'nuevo pollito se unió' : 'nuevos pollitos se unieron'} en las últimas 48 horas!
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
+                      )}
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+                        gap: 16,
+                        justifyContent: 'center'
+                      }}>
+                        {sortedMembers.map(m => {
+                          const rUser = (m.roblox_user || '').replace(/^@+/, '');
+                          const avatarUrl = m.avatar_url || avatars[rUser] || avatars[m.roblox_user];
+                          const memberIsNew = isNew(m);
+                          return (
+                            <div key={m.id} className={`pollito-card${memberIsNew ? ' member-card-new' : ''}`} style={{ transform: `rotate(${rot()})`, border: memberIsNew ? '3px solid var(--orange)' : '3px solid var(--yellow)', margin: 0, minWidth: 180, flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '8px' }}>
+                              {memberIsNew && <span className="new-member-sparkle" aria-hidden="true">✨</span>}
+                              {avatarUrl ? (
+                                <img
+                                  src={avatarUrl}
+                                  alt={rUser}
+                                  style={{ width: 80, height: 80, borderRadius: '50%', border: `3px solid ${memberIsNew ? 'var(--orange)' : 'var(--ink)'}`, background: 'var(--cream)', marginBottom: 4 }}
+                                />
+                              ) : (
+                                <div style={{ width: 80, height: 80, borderRadius: '50%', border: `3px solid ${memberIsNew ? 'var(--orange)' : 'var(--ink)'}`, background: 'var(--cream-dark)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', marginBottom: 4 }}>
+                                  🐣
+                                </div>
+                              )}
+                              <span className="pollito-name" style={{ alignSelf: 'stretch', textAlign: 'start' }}>Roblox: @{rUser}</span>
+                              <div className="pollito-name" style={{ marginTop: -4, alignSelf: 'stretch', textAlign: 'start' }}>
+                                TikTok: <a
+                                  href={`https://www.tiktok.com/search/user?q=${(m.tiktok_user || '').replace(/^@+/, '')}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{ color: 'var(--ink)', textDecoration: 'underline' }}
+                                >
+                                  @{(m.tiktok_user || '').replace(/^@+/, '')}
+                                </a>
+                              </div>
+                              {memberIsNew ? (
+                                <span className="badge-new-member">🎉 ¡NUEVO!</span>
+                              ) : (
+                                <span className="badge-official" style={{ fontSize: '0.75rem' }}>POLLITO OFICIAL</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
               <div className="modal-footer-v3">
                 <button onClick={() => setShowMembers(false)} className="btn-primary-v3">CERRAR</button>
