@@ -172,7 +172,7 @@ export default function SlotsPage() {
                         </h3>
                         <p style={{ marginBottom: 22, color: 'var(--ink-soft)', lineHeight: 1.5 }}>
                             {isBookedForDelete
-                                ? 'Este horario ya está RESERVADO por un candidato. Si lo eliminas, el candidato perderá su cita. ¿Estás seguro?'
+                                ? 'Este horario ya está RESERVADO por un candidato. Si lo eliminas, el candidato perderá su entrevista. ¿Estás seguro?'
                                 : 'Esta acción no se puede deshacer.'}
                         </p>
                         <div style={{ display: 'flex', gap: 16, justifyContent: 'center', width: '100%' }}>

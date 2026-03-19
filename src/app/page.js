@@ -245,8 +245,12 @@ export default function Landing() {
     p.status === 'official' && (p.date ? p.date >= todayStr : true)
   );
 
-  const pendingRegresar = regresarList.filter(r => r.status === 'pending');
-  const approvedRegresar = regresarList.filter(r => r.status === 'approved');
+  const pendingRegresar = regresarList.filter(r => 
+    r.status === 'pending' && (r.preferred_date ? r.preferred_date >= todayStr : true)
+  );
+  const approvedRegresar = regresarList.filter(r => 
+    r.status === 'approved' && (r.preferred_date ? r.preferred_date >= todayStr : true)
+  );
 
   const rot = () => `${(Math.random() * 2.5 - 1.25).toFixed(1)}deg`;
 
@@ -429,7 +433,7 @@ export default function Landing() {
                       </p>
 
                       <p style={{ fontSize: '1rem', lineHeight: 1.5, marginBottom: 16, color: 'var(--ink-soft)' }}>
-                        Para confirmar tu cita, debes enviarle un mensaje por TikTok a la moderadora de tu horario:
+                        Para confirmar tu entrevista, debes enviarle un mensaje por TikTok a la moderadora de tu horario:
                       </p>
 
                       <div style={{

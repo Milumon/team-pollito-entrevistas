@@ -65,6 +65,11 @@ export default function AdminLayout({ children }) {
                         </div>
                         <button type="submit" className="btn-primary">ENTRAR</button>
                     </form>
+                    <div style={{ marginTop: '24px', textAlign: 'center' }}>
+                        <Link href="/" style={{ color: 'var(--ink-soft)', fontSize: '0.95rem', textDecoration: 'underline', fontWeight: 600 }}>
+                            ← Volver a la web principal
+                        </Link>
+                    </div>
                 </div>
             </div>
         );

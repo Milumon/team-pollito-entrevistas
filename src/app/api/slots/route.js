@@ -5,9 +5,13 @@ export const dynamic = 'force-dynamic';
 
 // GET /api/slots — todos los slots disponibles para el formulario público
 export async function GET() {
-  const now = new Date().toISOString();
-  const dateStr = now.split('T')[0];
-  const timeStr = now.split('T')[1].slice(0, 8);
+  // Los usuarios deben poder escoger hasta 5 horas antes de la entrevista
+  const targetDate = new Date();
+  targetDate.setHours(targetDate.getHours() + 5);
+  
+  const limitIso = targetDate.toISOString();
+  const dateStr = limitIso.split('T')[0];
+  const timeStr = limitIso.split('T')[1].slice(0, 8);
 
   const { data, error } = await supabaseAdmin
     .from('slots')

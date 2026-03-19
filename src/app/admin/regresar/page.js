@@ -74,6 +74,35 @@ export default function RegresarPage() {
         rejected: solicitudes.filter(s => s.status === 'rejected').length,
     };
 
+    const [promotingIds, setPromotingIds] = useState(new Set());
+
+    async function handlePromoteToMember(candidateId, roblox_user, tiktok_user) {
+        if (!confirm(`¿Convertir a @${roblox_user} en Pollito Oficial (Team)?`)) return;
+
+        setPromotingIds(prev => new Set(prev).add(candidateId));
+        try {
+            const res = await fetch('/api/members', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ roblox_user, tiktok_user }),
+            });
+            if (res.ok) {
+                alert('¡Nuevo miembro oficial añadido! ✨');
+            } else {
+                const errorData = await res.json();
+                throw new Error(errorData.error || 'Error desconocido');
+            }
+        } catch (err) {
+            alert(`Error al promover: ${err.message}`);
+        } finally {
+            setPromotingIds(prev => {
+                const next = new Set(prev);
+                next.delete(candidateId);
+                return next;
+            });
+        }
+    }
+
     return (
         <div className="section-container">
             <div className="section-header-v3">
@@ -118,7 +147,13 @@ export default function RegresarPage() {
                 </div>
             )}
 
-            <div className="candidates-container-v4">
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                gap: 20,
+                justifyContent: 'center',
+                padding: '20px 0'
+            }}>
                 {loadingData ? (
                     <>
                         <div className="skeleton-card skeleton" />
@@ -126,105 +161,136 @@ export default function RegresarPage() {
                         <div className="skeleton-card skeleton" />
                     </>
                 ) : filteredByTab.length === 0 && !fetchError ? (
-                    <div className="empty-state-v3" style={{ padding: '60px 20px' }}>
+                    <div className="empty-state-v3" style={{ padding: '60px 20px', gridColumn: '1 / -1' }}>
                         <span className="empty-icon-v3">
                             {activeTab === 'pending' ? '🐣' : activeTab === 'approved' ? '✅' : '🚫'}
                         </span>
                         <p>No hay solicitudes en esta sección.</p>
                     </div>
                 ) : (
-                    filteredByTab.map(s => (
-                        <div key={s.id} className="candidate-card-v3">
-                            <div className="candidate-info-row-v3">
-                                <div className="candidate-main-v3">
-                                    <span className="candidate-roblox-v3">{s.roblox_user}</span>
-                                    <span className="candidate-tiktok-v3">
-                                        TikTok: <a
-                                            href={`https://www.tiktok.com/search/user?q=${s.tiktok_user}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            style={{ color: 'inherit', textDecoration: 'underline' }}
-                                        >
-                                            {s.tiktok_user}
-                                        </a>
-                                    </span>
-                                </div>
-
-                                <div className="candidate-schedule-v3">
-                                    <div className="schedule-item-v3">
-                                        <span className="schedule-icon-v3">📅</span>
-                                        <div className="schedule-text-v3">
-                                            <strong>{formatDayMonth(s.preferred_date)}</strong>
-                                            <span>Fecha Deseada</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Razones — visibles solo en admin */}
-                            <div style={{
-                                background: 'var(--cream)',
-                                border: '2.5px solid var(--ink)',
-                                borderRadius: 16,
-                                padding: '16px 18px',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: 14,
-                                boxShadow: 'var(--shadow-sm)'
+                    filteredByTab.map(s => {
+                        const rUser = (s.roblox_user || '').replace(/^@+/, '');
+                        
+                        return (
+                            <div key={s.id} className="pollito-card" style={{ 
+                                transform: `rotate(${(Math.random() * 1.5 - 0.75).toFixed(1)}deg)`, 
+                                border: '3px solid var(--ink)', 
+                                margin: 0, 
+                                minWidth: 280, 
+                                flexDirection: 'column', 
+                                alignItems: 'center', 
+                                textAlign: 'center', 
+                                gap: '12px',
+                                position: 'relative'
                             }}>
-                                <div>
-                                    <div style={{
-                                        display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6,
-                                        fontFamily: 'var(--font-display)', fontSize: '0.8rem', fontWeight: 800,
-                                        textTransform: 'uppercase', color: 'var(--red)'
-                                    }}>
-                                        🚫 Razón del Baneo
-                                    </div>
-                                    <p style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--ink)', lineHeight: 1.4, whiteSpace: 'pre-wrap' }}>
-                                        {s.ban_reason}
-                                    </p>
+                                {/* Meta actions top-right */}
+                                <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '6px', zIndex: 10 }}>
+                                    {s.status !== 'pending' && (
+                                        <button onClick={() => handleUpdateStatus(s.id, 'pending')} className="btn-icon-v3" title="Deshacer" style={{ border: '1px solid rgba(0,0,0,0.1)', background: 'white', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>↩️</button>
+                                    )}
+                                    <button onClick={() => openDeleteModal(s.id)} className="btn-icon-v3" title="Eliminar definitivamente" style={{ border: '1px solid rgba(0,0,0,0.1)', background: 'var(--red)', color: 'white', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🗑️</button>
                                 </div>
-                                <div style={{ borderTop: '1px dashed rgba(0,0,0,0.1)', paddingTop: 12 }}>
-                                    <div style={{
-                                        display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6,
-                                        fontFamily: 'var(--font-display)', fontSize: '0.8rem', fontWeight: 800,
-                                        textTransform: 'uppercase', color: 'var(--mint)'
-                                    }}>
-                                        💚 Razón para Volver
-                                    </div>
-                                    <p style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--ink)', lineHeight: 1.4, whiteSpace: 'pre-wrap' }}>
-                                        {s.return_reason}
-                                    </p>
-                                </div>
-                            </div>
 
-                            <div className="candidate-footer-v3">
-                                <div className="candidate-actions-v3">
+                                <div style={{ width: 80, height: 80, borderRadius: '50%', border: `3px solid var(--ink)`, background: 'var(--cream-dark)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', marginTop: 12 }}>
+                                    🐣
+                                </div>
+                                
+                                <span className="pollito-name" style={{ alignSelf: 'stretch', textAlign: 'center' }}>Roblox: @{rUser}</span>
+                                <div className="pollito-name" style={{ marginTop: -8, alignSelf: 'stretch', textAlign: 'center' }}>
+                                    TikTok: <a
+                                        href={`https://www.tiktok.com/search/user?q=${(s.tiktok_user || '').replace(/^@+/, '')}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{ color: 'var(--ink)', textDecoration: 'underline' }}
+                                    >
+                                        @{(s.tiktok_user || '').replace(/^@+/, '')}
+                                    </a>
+                                </div>
+
+                                <div style={{
+                                    width: '100%',
+                                    background: 'var(--cream)',
+                                    border: '1.5px solid var(--ink)',
+                                    borderRadius: 12,
+                                    padding: '12px',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: 10,
+                                    boxShadow: 'var(--shadow-sm)',
+                                    textAlign: 'left'
+                                }}>
+                                    <div>
+                                        <div style={{
+                                            display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4,
+                                            fontFamily: 'var(--font-display)', fontSize: '0.75rem', fontWeight: 800,
+                                            textTransform: 'uppercase', color: 'var(--red)'
+                                        }}>
+                                            🚫 Motivo Baneo
+                                        </div>
+                                        <p style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--ink)', lineHeight: 1.3, whiteSpace: 'pre-wrap' }}>
+                                            {s.ban_reason}
+                                        </p>
+                                    </div>
+                                    <div style={{ borderTop: '1px dashed rgba(0,0,0,0.1)', paddingTop: 10 }}>
+                                        <div style={{
+                                            display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4,
+                                            fontFamily: 'var(--font-display)', fontSize: '0.75rem', fontWeight: 800,
+                                            textTransform: 'uppercase', color: 'var(--mint)'
+                                        }}>
+                                            💚 Motivo Regreso
+                                        </div>
+                                        <p style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--ink)', lineHeight: 1.3, whiteSpace: 'pre-wrap' }}>
+                                            {s.return_reason}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div style={{
+                                    width: '100%',
+                                    background: 'rgba(0,0,0,0.04)',
+                                    borderRadius: '12px',
+                                    border: '1px dashed rgba(0,0,0,0.1)',
+                                    padding: '8px',
+                                    marginTop: '4px'
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '0.85rem', color: 'var(--ink)' }}>
+                                        <span>📅 {s.preferred_date ? formatDayMonth(s.preferred_date) : 'No especificada'}</span>
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', marginTop: 'auto' }}>
                                     {s.status === 'pending' && (
                                         <>
-                                            <button onClick={() => handleUpdateStatus(s.id, 'approved')} className="btn-v3 approve">Asignar Entrevista ✅</button>
-                                            <button onClick={() => handleUpdateStatus(s.id, 'rejected')} className="btn-v3 reject">Rechazar ❌</button>
+                                            <button onClick={() => handleUpdateStatus(s.id, 'approved')} className="btn-v3 approve" style={{ width: '100%' }}>Asignar Entrevista ✅</button>
+                                            <button onClick={() => handleUpdateStatus(s.id, 'rejected')} className="btn-v3 reject" style={{ width: '100%' }}>Rechazar ❌</button>
                                         </>
                                     )}
                                     {s.status === 'approved' && (
-                                        <div className="status-badge-v3" style={{ padding: '12px 20px', fontSize: '0.9rem', background: 'var(--mint-light)', color: '#0e5c3a', border: '2px solid #0e5c3a', borderRadius: 12, textAlign: 'center', fontWeight: 800 }}>
-                                            ✅ ENTREVISTA ASIGNADA
-                                        </div>
+                                        <>
+                                            <button
+                                                onClick={() => handleUpdateStatus(s.id, 'rejected')}
+                                                className="btn-v3 reject"
+                                                style={{ width: '100%', fontSize: '0.85rem' }}
+                                            >
+                                                No pasó entrevista ❌
+                                            </button>
+                                            <button
+                                                onClick={() => handlePromoteToMember(s.id, s.roblox_user, s.tiktok_user)}
+                                                className="btn-v3 approve"
+                                                disabled={promotingIds.has(s.id)}
+                                                style={{ width: '100%', fontSize: '0.85rem', padding: '10px 8px' }}
+                                            >
+                                                {promotingIds.has(s.id) ? '⏳ Promoviendo...' : '🐣 Convertir en Oficial'}
+                                            </button>
+                                        </>
                                     )}
                                     {s.status === 'rejected' && (
-                                        <div className="status-badge-v3" style={{ padding: '12px 20px', fontSize: '0.9rem' }}>🚫 SOLICITUD RECHAZADA</div>
+                                        <div className="status-badge-v3" style={{ padding: '10px', fontSize: '0.85rem' }}>🚫 RECHAZADA</div>
                                     )}
-                                </div>
-
-                                <div className="candidate-meta-v3">
-                                    {s.status !== 'pending' && (
-                                        <button onClick={() => handleUpdateStatus(s.id, 'pending')} className="btn-icon-v3" title="Deshacer">↩️</button>
-                                    )}
-                                    <button onClick={() => openDeleteModal(s.id)} className="btn-icon-v3" title="Eliminar definitivamente">🗑️</button>
                                 </div>
                             </div>
-                        </div>
-                    ))
+                        );
+                    })
                 )}
             </div>
         </div>

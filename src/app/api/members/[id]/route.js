@@ -19,15 +19,16 @@ export async function PATCH(request, context) {
     try {
         const { id } = await context.params;
         const body = await request.json();
-        const { roblox_user, tiktok_user } = body;
+        const { roblox_user, tiktok_user, created_at } = body;
 
-        if (!roblox_user && !tiktok_user) {
+        if (!roblox_user && !tiktok_user && !created_at) {
             return NextResponse.json({ error: 'Nada para actualizar' }, { status: 400 });
         }
 
         const updateData = {};
         if (roblox_user) updateData.roblox_user = roblox_user;
         if (tiktok_user) updateData.tiktok_user = tiktok_user;
+        if (created_at) updateData.created_at = created_at;
 
         // Si cambio el roblox_user, refrescamos el avatar
         if (roblox_user) {
